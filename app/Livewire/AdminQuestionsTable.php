@@ -19,6 +19,20 @@ class AdminQuestionsTable extends Component
     #[Url(as: 'q')]
     public string $search = '';
 
+    #[Url(as: 'deleted')]
+    public bool $showDeleted = false;
+
+    #[Locked]
+    public ?int $editingId = null;
+
+    public string $editContent = '';
+
+    public string $editAnswer = '';
+
+    public bool $editHasAnswer = false;
+
+    public bool $showEdit = false;
+
     public function updatingStatusFilter(): void
     {
         $this->resetPage();
@@ -29,10 +43,104 @@ class AdminQuestionsTable extends Component
         $this->resetPage();
     }
 
+    public function updatingShowDeleted(): void
+    {
+        $this->resetPage();
+    }
+
     public function resetFilters(): void
     {
-        $this->reset(['statusFilter', 'search']);
+        $this->reset(['statusFilter', 'search', 'showDeleted']);
         $this->resetPage();
+    }
+
+    public function edit(int $id): void
+    {
+        $question = Question::findOrFail($id);
+
+        $this->editingId     = $question->id;
+        $this->editContent   = $question->content;
+        $this->editAnswer    = $question->hasVisibleAnswer() ? $question->answer : '';
+        $this->editHasAnswer = $question->hasVisibleAnswer();
+
+        $this->resetErrorBag();
+        $this->showEdit = true;
+    }
+
+    public function saveEdit(): void
+    {
+        $rules = ['editContent' => ['required', 'string', 'between:10,2000']];
+
+        if ($this->editHasAnswer) {
+            $rules['editAnswer'] = ['required', 'string', 'between:10,10000'];
+        }
+
+        $this->validate($rules, [
+            'editContent.required' => 'Question text is required.',
+            'editContent.between'  => 'Question must be 10–2000 characters.',
+            'editAnswer.required'  => 'Answer text is required.',
+            'editAnswer.between'   => 'Answer must be 10–10 000 characters.',
+        ]);
+
+        $data = ['content' => trim($this->editContent)];
+
+        if ($this->editHasAnswer) {
+            $data['answer'] = $this->editAnswer;
+        }
+
+        Question::whereKey($this->editingId)->update($data);
+
+        $this->reset(['editingId', 'editContent', 'editAnswer', 'editHasAnswer', 'showEdit']);
+        session()->flash('admin-questions-ok', 'Question updated.');
+    }
+
+    public function deleteAnswer(int $id): void
+    {
+        // Soft-delete only the answer: keep answer/answered_by/answered_at for
+        // recovery, hide it everywhere, and reopen the question so it can be
+        // reclaimed and answered again.
+        Question::whereKey($id)->update([
+            'status'            => QuestionStatus::Asked,
+            'answer_deleted_at' => now(),
+            'claimed_by'        => null,
+            'claimed_at'        => null,
+        ]);
+
+        $this->reset(['editingId', 'editContent', 'editAnswer', 'editHasAnswer', 'showEdit']);
+        session()->flash('admin-questions-ok', 'Answer removed — question reopened.');
+    }
+
+    public function delete(int $id): void
+    {
+        Question::whereKey($id)->delete();
+
+        session()->flash('admin-questions-ok', 'Question deleted.');
+    }
+
+    public function restore(int $id): void
+    {
+        Question::onlyTrashed()->whereKey($id)->restore();
+
+        session()->flash('admin-questions-ok', 'Question restored.');
+    }
+
+    public function forceDelete(int $id): void
+    {
+        Question::withTrashed()->whereKey($id)->forceDelete();
+
+        session()->flash('admin-questions-ok', 'Question permanently deleted.');
+    }
+
+    public function restoreAnswer(int $id): void
+    {
+        Question::whereKey($id)
+            ->whereNotNull('answer_deleted_at')
+            ->update([
+                'status'            => QuestionStatus::Answered,
+                'answer_deleted_at' => null,
+            ]);
+
+        session()->flash('admin-questions-ok', 'Answer restored.');
     }
 
     public function render()
@@ -40,6 +148,7 @@ class AdminQuestionsTable extends Component
         $validStatuses = array_map(fn (QuestionStatus $s) => $s->value, QuestionStatus::cases());
 
         $questions = Question::query()
+            ->when($this->showDeleted, fn ($q) => $q->withTrashed())
             ->with(['asker:id,name', 'claimer:id,name', 'answerer:id,name'])
             ->when(in_array($this->statusFilter, $validStatuses, true), function ($q) {
                 $q->where('status', $this->statusFilter);

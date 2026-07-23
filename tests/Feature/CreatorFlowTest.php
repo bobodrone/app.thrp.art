@@ -5,120 +5,12 @@ namespace Tests\Feature;
 use App\Enums\QuestionStatus;
 use App\Enums\UserRole;
 use App\Jobs\NotifyAskerOfAnswer;
-use App\Jobs\NotifyCreatorsOfNewQuestion;
 use App\Models\Question;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
+use Livewire\Livewire;
 use Tests\TestCase;
-
-class HomeAndQuestionsTest extends TestCase
-{
-    use RefreshDatabase;
-
-    public function test_home_page_renders_with_question_feed(): void
-    {
-        $member  = User::factory()->create();
-        $creator = User::factory()->creator()->create();
-        Question::factory()->answeredBy($creator)->create(['asked_by' => $member->id]);
-
-        $response = $this->get('/');
-
-        $response->assertStatus(200);
-        $response->assertSee('The Human Response Project');
-        $response->assertSee('Real questions.');
-    }
-
-    public function test_guest_cannot_submit_question(): void
-    {
-        $response = $this->post('/', ['content' => 'What is the meaning of life, the universe, and everything?']);
-
-        $response->assertRedirect('/login');
-        $this->assertDatabaseCount('questions', 0);
-    }
-
-    public function test_member_can_submit_question_and_is_redirected_to_detail(): void
-    {
-        Queue::fake();
-        $member = User::factory()->create();
-
-        $response = $this->actingAs($member)->post('/', [
-            'content' => 'What is the meaning of life, the universe, and everything?',
-        ]);
-
-        $this->assertDatabaseCount('questions', 1);
-        $q = Question::first();
-        $this->assertSame(QuestionStatus::Asked->value, $q->status->value);
-        $this->assertSame($member->id, $q->asked_by);
-
-        $response->assertRedirect(route('questions.show', $q));
-        Queue::assertPushed(NotifyCreatorsOfNewQuestion::class);
-    }
-
-    public function test_question_must_be_10_to_2000_chars(): void
-    {
-        $member = User::factory()->create();
-
-        $tooShort = $this->from('/')->actingAs($member)->post('/', ['content' => 'too short']);
-        $tooShort->assertSessionHasErrors(['content']);
-        $this->assertDatabaseCount('questions', 0);
-
-        $tooLong = $this->from('/')->actingAs($member)->post('/', ['content' => str_repeat('a', 2001)]);
-        $tooLong->assertSessionHasErrors(['content']);
-        $this->assertDatabaseCount('questions', 0);
-    }
-
-    public function test_question_detail_renders_for_anyone(): void
-    {
-        $asker   = User::factory()->create(['name' => 'Audrey Asker']);
-        $creator = User::factory()->creator()->create(['name' => 'Carl Creator']);
-        $q       = Question::factory()->answeredBy($creator)->create(['asked_by' => $asker->id]);
-
-        $response = $this->get(route('questions.show', $q));
-
-        $response->assertStatus(200);
-        $response->assertSee($q->content);
-        $response->assertSee('Audrey Asker');
-        $response->assertSee('Carl Creator');
-        $response->assertSee('<h2>Answer</h2>', false); // rendered markdown fixture
-    }
-
-    public function test_unknown_question_returns_404(): void
-    {
-        $response = $this->get('/questions/9999');
-
-        $response->assertNotFound();
-    }
-}
-
-class MyQuestionsTest extends TestCase
-{
-    use RefreshDatabase;
-
-    public function test_my_questions_page_renders_only_mine(): void
-    {
-        $me  = User::factory()->create(['name' => 'Me']);
-        $you = User::factory()->create(['name' => 'You']);
-        Question::factory()->create(['asked_by' => $me->id, 'content' => 'My own question here']);
-        Question::factory()->create(['asked_by' => $you->id, 'content' => 'Your question not mine']);
-
-        $response = $this->actingAs($me)->get('/my-questions');
-
-        $response->assertStatus(200);
-        $response->assertSee('My own question here');
-        $response->assertDontSee('Your question not mine');
-    }
-
-    public function test_unmarked_question_on_my_questions_page_links_to_detail(): void
-    {
-        $me = User::factory()->create();
-        $q  = Question::factory()->create(['asked_by' => $me->id, 'content' => 'A question of mine']);
-
-        $response = $this->actingAs($me)->get('/my-questions');
-
-        $response->assertSee(route('questions.show', $q));
-    }
-}
 
 class CreatorFlowTest extends TestCase
 {
@@ -152,7 +44,10 @@ class CreatorFlowTest extends TestCase
         $asker   = User::factory()->create();
         $q       = Question::factory()->create(['asked_by' => $asker->id]);
 
-        $response = $this->actingAs($creator)->post("/creator/questions/{$q->id}/claim");
+        Livewire::actingAs($creator)
+            ->test(\App\Livewire\CreatorQuestionDetail::class, ['question' => $q])
+            ->call('claim')
+            ->assertHasNoErrors();
 
         $q->refresh();
         $this->assertSame(QuestionStatus::Claimed->value, $q->status->value);
@@ -176,7 +71,8 @@ class CreatorFlowTest extends TestCase
                 'claimed_at' => now(),
             ]);
 
-        Livewire::test(\App\Livewire\CreatorQuestionDetail::class, ['question' => $q->fresh()])
+        Livewire::actingAs($loser)
+            ->test(\App\Livewire\CreatorQuestionDetail::class, ['question' => $q->fresh()])
             ->call('claim')
             ->assertHasErrors(['claim']);
 
@@ -191,7 +87,8 @@ class CreatorFlowTest extends TestCase
         $asker   = User::factory()->create();
         $q       = Question::factory()->claimedBy($creator)->create(['asked_by' => $asker->id]);
 
-        Livewire::test(\App\Livewire\CreatorQuestionDetail::class, ['question' => $q])
+        Livewire::actingAs($creator)
+            ->test(\App\Livewire\CreatorQuestionDetail::class, ['question' => $q])
             ->set('answer', '## Definitely yes
 
 The answer involves **tea** and *patience*. Here is why.')
@@ -206,6 +103,30 @@ The answer involves **tea** and *patience*. Here is why.')
         Queue::assertPushed(NotifyAskerOfAnswer::class);
     }
 
+    public function test_reanswering_a_reopened_question_clears_answer_deletion(): void
+    {
+        Queue::fake();
+        $creator = User::factory()->creator()->create();
+        $asker   = User::factory()->create();
+        // A question whose previous answer was soft-deleted, then re-claimed.
+        $q = Question::factory()->claimedBy($creator)->create([
+            'asked_by'          => $asker->id,
+            'answer'            => 'Stale removed answer',
+            'answer_deleted_at' => now(),
+        ]);
+
+        Livewire::actingAs($creator)
+            ->test(\App\Livewire\CreatorQuestionDetail::class, ['question' => $q])
+            ->set('answer', 'A brand new answer that is long enough')
+            ->call('submitAnswer')
+            ->assertHasNoErrors();
+
+        $fresh = $q->fresh();
+        $this->assertNull($fresh->answer_deleted_at);
+        $this->assertTrue($fresh->hasVisibleAnswer());
+        $this->assertSame('A brand new answer that is long enough', $fresh->answer);
+    }
+
     public function test_non_claimer_cannot_answer(): void
     {
         $claimer  = User::factory()->creator()->create();
@@ -213,7 +134,8 @@ The answer involves **tea** and *patience*. Here is why.')
         $asker    = User::factory()->create();
         $q        = Question::factory()->claimedBy($claimer)->create(['asked_by' => $asker->id]);
 
-        Livewire::test(\App\Livewire\CreatorQuestionDetail::class, ['question' => $q])
+        Livewire::actingAs($interloper)
+            ->test(\App\Livewire\CreatorQuestionDetail::class, ['question' => $q])
             ->set('answer', 'Some answer text that is long enough')
             ->call('submitAnswer')
             ->assertHasErrors(['answer']);
@@ -228,7 +150,8 @@ The answer involves **tea** and *patience*. Here is why.')
         $creator = User::factory()->creator()->create();
         $q       = Question::factory()->claimedBy($creator)->create();
 
-        Livewire::test(\App\Livewire\CreatorQuestionDetail::class, ['question' => $q])
+        Livewire::actingAs($creator)
+            ->test(\App\Livewire\CreatorQuestionDetail::class, ['question' => $q])
             ->set('answer', 'short')
             ->call('submitAnswer')
             ->assertHasErrors(['answer']);
@@ -240,13 +163,99 @@ The answer involves **tea** and *patience*. Here is why.')
         $asker   = User::factory()->create();
         $q       = Question::factory()->claimedBy($creator)->create(['asked_by' => $asker->id]);
 
-        Livewire::test(\App\Livewire\CreatorQuestionDetail::class, ['question' => $q])
+        Livewire::actingAs($creator)
+            ->test(\App\Livewire\CreatorQuestionDetail::class, ['question' => $q])
             ->call('unclaim');
 
         $q->refresh();
         $this->assertSame(QuestionStatus::Asked->value, $q->status->value);
         $this->assertNull($q->claimed_by);
         $this->assertNull($q->claimed_at);
+    }
+
+    public function test_answerer_can_edit_their_answer_without_renotifying(): void
+    {
+        Queue::fake();
+        $creator = User::factory()->creator()->create();
+        $asker   = User::factory()->create();
+        $q = Question::factory()->answeredBy($creator)->create([
+            'asked_by' => $asker->id,
+            'answer'   => 'The first version of the answer',
+        ]);
+
+        Livewire::actingAs($creator)
+            ->test(\App\Livewire\CreatorQuestionDetail::class, ['question' => $q])
+            ->assertViewHas('canEditAnswer', true)
+            ->call('startEditAnswer')
+            ->assertSet('editingAnswer', true)
+            ->assertSet('answerDraft', 'The first version of the answer')
+            ->set('answerDraft', 'A revised and corrected answer text')
+            ->call('updateAnswer')
+            ->assertHasNoErrors()
+            ->assertSet('editingAnswer', false);
+
+        $this->assertSame('A revised and corrected answer text', $q->fresh()->answer);
+        Queue::assertNotPushed(NotifyAskerOfAnswer::class);
+    }
+
+    public function test_admin_can_edit_another_creators_answer(): void
+    {
+        $admin   = User::factory()->admin()->create();
+        $creator = User::factory()->creator()->create();
+        $asker   = User::factory()->create();
+        $q = Question::factory()->answeredBy($creator)->create([
+            'asked_by' => $asker->id,
+            'answer'   => 'Creator wrote this answer',
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(\App\Livewire\CreatorQuestionDetail::class, ['question' => $q])
+            ->assertViewHas('canEditAnswer', true)
+            ->call('startEditAnswer')
+            ->set('answerDraft', 'Admin corrected the answer text')
+            ->call('updateAnswer')
+            ->assertHasNoErrors();
+
+        $this->assertSame('Admin corrected the answer text', $q->fresh()->answer);
+    }
+
+    public function test_other_creator_cannot_edit_someone_elses_answer(): void
+    {
+        $author   = User::factory()->creator()->create();
+        $intruder = User::factory()->creator()->create();
+        $asker    = User::factory()->create();
+        $q = Question::factory()->answeredBy($author)->create([
+            'asked_by' => $asker->id,
+            'answer'   => 'The protected original answer',
+        ]);
+
+        Livewire::actingAs($intruder)
+            ->test(\App\Livewire\CreatorQuestionDetail::class, ['question' => $q])
+            ->assertViewHas('canEditAnswer', false)
+            ->set('answerDraft', 'A malicious rewrite attempt here')
+            ->call('updateAnswer')
+            ->assertHasErrors('answerDraft');
+
+        $this->assertSame('The protected original answer', $q->fresh()->answer);
+    }
+
+    public function test_edited_answer_must_meet_length_rules(): void
+    {
+        $creator = User::factory()->creator()->create();
+        $asker   = User::factory()->create();
+        $q = Question::factory()->answeredBy($creator)->create([
+            'asked_by' => $asker->id,
+            'answer'   => 'A perfectly valid original answer',
+        ]);
+
+        Livewire::actingAs($creator)
+            ->test(\App\Livewire\CreatorQuestionDetail::class, ['question' => $q])
+            ->call('startEditAnswer')
+            ->set('answerDraft', 'short')
+            ->call('updateAnswer')
+            ->assertHasErrors('answerDraft');
+
+        $this->assertSame('A perfectly valid original answer', $q->fresh()->answer);
     }
 
     public function test_answered_history_lists_only_my_answered(): void

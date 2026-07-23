@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Enums\QuestionStatus;
+use App\Enums\UserRole;
 use App\Jobs\NotifyAskerOfAnswer;
 use App\Models\Question;
 use App\Services\MarkdownRenderer;
@@ -12,6 +13,9 @@ class CreatorQuestionDetail extends Component
 {
     public int $questionId;
     public string $answer = '';
+
+    public bool $editingAnswer = false;
+    public string $answerDraft = '';
 
     public function mount(Question $question): void
     {
@@ -24,14 +28,31 @@ class CreatorQuestionDetail extends Component
         $question = Question::with(['asker:id,name', 'claimer:id,name', 'answerer:id,name'])
             ->findOrFail($this->questionId);
 
-        $renderedAnswer = $question->answer ? $markdown->render($question->answer) : null;
+        $renderedAnswer = $question->hasVisibleAnswer() ? $markdown->render($question->answer) : null;
 
         return view('livewire.creator.question-detail', [
             'question'       => $question,
             'renderedAnswer' => $renderedAnswer,
+            'canEditAnswer'  => $this->userCanEditAnswer($question),
         ])
         ->layout('layouts.app')
         ->title('Question — Creator View — THRP');
+    }
+
+    /**
+     * Only the creator who wrote the answer, or an admin, may edit it —
+     * and only while there is a visible (non-deleted) answer.
+     */
+    protected function userCanEditAnswer(Question $question): bool
+    {
+        $user = auth()->user();
+
+        if (! $user || ! $question->hasVisibleAnswer()) {
+            return false;
+        }
+
+        return $question->answered_by === $user->id
+            || $user->role === UserRole::Admin;
     }
 
     public function claim()
@@ -84,10 +105,11 @@ class CreatorQuestionDetail extends Component
             ->where('status', QuestionStatus::Claimed)
             ->where('claimed_by', auth()->id())
             ->update([
-                'status'      => QuestionStatus::Answered,
-                'answer'      => $validated['answer'],
-                'answered_by' => auth()->id(),
-                'answered_at' => now(),
+                'status'            => QuestionStatus::Answered,
+                'answer'            => $validated['answer'],
+                'answered_by'       => auth()->id(),
+                'answered_at'       => now(),
+                'answer_deleted_at' => null,
             ]);
 
         if ($updated === 0) {
@@ -98,5 +120,50 @@ class CreatorQuestionDetail extends Component
         NotifyAskerOfAnswer::dispatch(Question::find($this->questionId));
 
         $this->redirect(route('creator.questions.show', $this->questionId));
+    }
+
+    public function startEditAnswer(): void
+    {
+        $question = Question::findOrFail($this->questionId);
+
+        if (! $this->userCanEditAnswer($question)) {
+            return;
+        }
+
+        $this->answerDraft   = $question->answer ?? '';
+        $this->editingAnswer = true;
+        $this->resetErrorBag();
+    }
+
+    public function cancelEditAnswer(): void
+    {
+        $this->editingAnswer = false;
+        $this->reset('answerDraft');
+        $this->resetErrorBag();
+    }
+
+    public function updateAnswer(): void
+    {
+        $question = Question::findOrFail($this->questionId);
+
+        if (! $this->userCanEditAnswer($question)) {
+            $this->addError('answerDraft', 'You are not allowed to edit this answer.');
+            return;
+        }
+
+        $validated = $this->validate([
+            'answerDraft' => ['required', 'string', 'between:10,10000'],
+        ], [
+            'answerDraft.required' => 'Answer text is required.',
+            'answerDraft.between'  => 'Answer must be 10–10 000 characters.',
+        ]);
+
+        // Edit in place — no re-notification to the asker.
+        Question::whereKey($this->questionId)->update([
+            'answer' => $validated['answerDraft'],
+        ]);
+
+        $this->editingAnswer = false;
+        $this->reset('answerDraft');
     }
 }

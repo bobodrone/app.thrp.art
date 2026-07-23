@@ -79,14 +79,42 @@
     {{-- State D: answered --}}
     @elseif ($isAnswered && $renderedAnswer)
         <div class="mt-6 rounded-2xl border border-leaf-200 bg-white p-8 shadow-sm">
-            <p class="mb-4 font-body text-xs font-medium uppercase tracking-wide text-soil-400">Answer</p>
-            <div class="prose prose-sm max-w-none font-body prose-headings:font-display prose-a:text-leaf-600">
-                {!! $renderedAnswer !!}
-            </div>
-            @if ($question->answerer && $question->answered_at)
-                <p class="mt-6 font-body text-xs text-soil-400">
-                    Answered by {{ $question->answerer->name }} · {{ $question->answered_at->diffForHumans() }}
-                </p>
+            @if ($editingAnswer)
+                <p class="mb-4 font-body text-sm font-medium text-soil-700">Edit answer</p>
+
+                <div class="space-y-4" wire:key="edit-answer-{{ $question->id }}">
+                    <x-markdown-editor wire-model="answerDraft" :initial="$answerDraft" />
+                    @error('answerDraft') <p class="font-body text-xs text-poppy-600">{{ $message }}</p> @enderror
+
+                    <div class="flex justify-end gap-3">
+                        <button type="button" wire:click="cancelEditAnswer"
+                            class="rounded-xl border border-soil-300 px-5 py-2 font-body text-sm text-soil-600 hover:bg-soil-50">
+                            Cancel
+                        </button>
+                        <button type="button" wire:click="updateAnswer"
+                            class="rounded-xl bg-leaf-600 px-6 py-2 font-body text-sm font-semibold text-white hover:bg-leaf-500">
+                            Save changes
+                        </button>
+                    </div>
+                </div>
+            @else
+                <div class="mb-4 flex items-center justify-between gap-4">
+                    <p class="font-body text-xs font-medium uppercase tracking-wide text-soil-400">Answer</p>
+                    @if ($canEditAnswer)
+                        <button type="button" wire:click="startEditAnswer"
+                            class="font-body text-sm font-semibold text-leaf-600 hover:underline">
+                            Edit answer
+                        </button>
+                    @endif
+                </div>
+                <div class="prose prose-sm max-w-none font-body prose-headings:font-display prose-a:text-leaf-600">
+                    {!! $renderedAnswer !!}
+                </div>
+                @if ($question->answerer && $question->answered_at)
+                    <p class="mt-6 font-body text-xs text-soil-400">
+                        Answered by {{ $question->answerer->name }} · {{ $question->answered_at->diffForHumans() }}
+                    </p>
+                @endif
             @endif
         </div>
     @endif

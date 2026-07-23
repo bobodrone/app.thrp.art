@@ -156,6 +156,188 @@ class AdminQuestionsTableTest extends TestCase
             ->assertSee('No questions match your filters.');
     }
 
+    public function test_admin_can_edit_question_content(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $asker = User::factory()->create();
+        $q = Question::factory()->create(['asked_by' => $asker->id, 'content' => 'Original content here']);
+
+        Livewire::actingAs($admin)
+            ->test(\App\Livewire\AdminQuestionsTable::class)
+            ->call('edit', $q->id)
+            ->assertSet('editContent', 'Original content here')
+            ->assertSet('showEdit', true)
+            ->set('editContent', 'Updated content that is long enough')
+            ->call('saveEdit')
+            ->assertHasNoErrors()
+            ->assertSet('showEdit', false);
+
+        $this->assertSame('Updated content that is long enough', $q->fresh()->content);
+    }
+
+    public function test_edit_validates_question_length(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $asker = User::factory()->create();
+        $q = Question::factory()->create(['asked_by' => $asker->id, 'content' => 'Original content here']);
+
+        Livewire::actingAs($admin)
+            ->test(\App\Livewire\AdminQuestionsTable::class)
+            ->call('edit', $q->id)
+            ->set('editContent', 'short')
+            ->call('saveEdit')
+            ->assertHasErrors('editContent');
+
+        $this->assertSame('Original content here', $q->fresh()->content);
+    }
+
+    public function test_admin_can_edit_answer_of_answered_question(): void
+    {
+        $admin   = User::factory()->admin()->create();
+        $asker   = User::factory()->create();
+        $creator = User::factory()->creator()->create();
+        $q = Question::factory()->answeredBy($creator)->create([
+            'asked_by' => $asker->id,
+            'content'  => 'A question here now',
+            'answer'   => 'The original answer text',
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(\App\Livewire\AdminQuestionsTable::class)
+            ->call('edit', $q->id)
+            ->assertSet('editHasAnswer', true)
+            ->set('editAnswer', 'A corrected answer that is long enough')
+            ->call('saveEdit')
+            ->assertHasNoErrors();
+
+        $this->assertSame('A corrected answer that is long enough', $q->fresh()->answer);
+    }
+
+    public function test_deleting_answer_soft_deletes_and_reopens_question(): void
+    {
+        $admin   = User::factory()->admin()->create();
+        $asker   = User::factory()->create();
+        $creator = User::factory()->creator()->create();
+        $q = Question::factory()->answeredBy($creator)->create([
+            'asked_by' => $asker->id,
+            'answer'   => 'The original answer text',
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(\App\Livewire\AdminQuestionsTable::class)
+            ->call('deleteAnswer', $q->id);
+
+        $fresh = $q->fresh();
+        $this->assertSame(QuestionStatus::Asked, $fresh->status);
+        $this->assertNotNull($fresh->answer_deleted_at);
+        $this->assertNull($fresh->claimed_by);
+        // Answer data is retained for recovery…
+        $this->assertSame('The original answer text', $fresh->answer);
+        $this->assertSame($creator->id, $fresh->answered_by);
+        // …but is no longer considered a visible answer.
+        $this->assertFalse($fresh->hasVisibleAnswer());
+    }
+
+    public function test_soft_deleted_answer_is_hidden_on_public_question_page(): void
+    {
+        $asker   = User::factory()->create();
+        $creator = User::factory()->creator()->create();
+        $q = Question::factory()->answeredBy($creator)->create([
+            'asked_by' => $asker->id,
+            'answer'   => 'Secret answer body here',
+        ]);
+        $q->update(['answer_deleted_at' => now()]);
+
+        $this->get(route('questions.show', $q))
+            ->assertStatus(200)
+            ->assertDontSee('Secret answer body here');
+    }
+
+    public function test_deleting_question_soft_deletes_and_hides_it(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $asker = User::factory()->create();
+        $q = Question::factory()->create(['asked_by' => $asker->id, 'content' => 'Doomed question here']);
+
+        Livewire::actingAs($admin)
+            ->test(\App\Livewire\AdminQuestionsTable::class)
+            ->call('delete', $q->id)
+            ->assertDontSee('Doomed question here');
+
+        $this->assertSoftDeleted('questions', ['id' => $q->id]);
+    }
+
+    public function test_show_deleted_toggle_reveals_trashed_questions(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $asker = User::factory()->create();
+        $q = Question::factory()->create(['asked_by' => $asker->id, 'content' => 'Trashed question here']);
+        $q->delete();
+
+        Livewire::actingAs($admin)
+            ->test(\App\Livewire\AdminQuestionsTable::class)
+            ->assertDontSee('Trashed question here')
+            ->set('showDeleted', true)
+            ->assertSee('Trashed question here')
+            ->assertSee('Deleted');
+    }
+
+    public function test_admin_can_restore_trashed_question(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $asker = User::factory()->create();
+        $q = Question::factory()->create(['asked_by' => $asker->id]);
+        $q->delete();
+
+        Livewire::actingAs($admin)
+            ->test(\App\Livewire\AdminQuestionsTable::class)
+            ->set('showDeleted', true)
+            ->call('restore', $q->id);
+
+        $this->assertNotSoftDeleted('questions', ['id' => $q->id]);
+    }
+
+    public function test_admin_can_permanently_delete_question(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $asker = User::factory()->create();
+        $q = Question::factory()->create(['asked_by' => $asker->id]);
+        $q->delete();
+
+        Livewire::actingAs($admin)
+            ->test(\App\Livewire\AdminQuestionsTable::class)
+            ->set('showDeleted', true)
+            ->call('forceDelete', $q->id);
+
+        $this->assertDatabaseMissing('questions', ['id' => $q->id]);
+    }
+
+    public function test_admin_can_restore_a_soft_deleted_answer(): void
+    {
+        $admin   = User::factory()->admin()->create();
+        $asker   = User::factory()->create();
+        $creator = User::factory()->creator()->create();
+        $q = Question::factory()->answeredBy($creator)->create([
+            'asked_by' => $asker->id,
+            'answer'   => 'The original answer text',
+        ]);
+        // Simulate a soft-deleted answer (reopened question).
+        $q->update([
+            'status'            => QuestionStatus::Asked,
+            'answer_deleted_at' => now(),
+            'claimed_by'        => null,
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(\App\Livewire\AdminQuestionsTable::class)
+            ->call('restoreAnswer', $q->id);
+
+        $fresh = $q->fresh();
+        $this->assertSame(QuestionStatus::Answered, $fresh->status);
+        $this->assertNull($fresh->answer_deleted_at);
+        $this->assertTrue($fresh->hasVisibleAnswer());
+    }
+
     public function test_table_shows_relative_users_and_formatted_dates(): void
     {
         $admin   = User::factory()->admin()->create();

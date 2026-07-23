@@ -13,6 +13,8 @@ WEB_RELEASE_DIR="$WEB_USER_HOST:$WEB_BASE_PATH"
 
 #test="--dry-run"
 
+npm run build
+
 rsync $test -avzh \
   --omit-dir-times \
   --no-o \
@@ -24,7 +26,8 @@ rsync $test -avzh \
   --exclude=".gitignore" \
   --exclude="storage" \
   --exclude="public/.htaccess" \
+  --exclude="public/hot" \
   --delete \
   ./ "${WEB_RELEASE_DIR}/"
 
-ssh $WEB_USER_HOST "php8.4-cli artisan cache:clear" 
+ssh $WEB_USER_HOST "cd $WEB_BASE_PATH && php8.4-cli artisan migrate --force && php8.4-cli artisan view:clear && php8.4-cli artisan cache:clear" 

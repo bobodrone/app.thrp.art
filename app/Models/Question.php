@@ -7,22 +7,33 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Question extends Model
 {
     /** @use HasFactory<\Database\Factories\QuestionFactory> */
     use HasFactory;
+    use SoftDeletes;
 
     protected $casts = [
-        'status'      => QuestionStatus::class,
-        'claimed_at'  => 'datetime',
-        'answered_at' => 'datetime',
+        'status'            => QuestionStatus::class,
+        'claimed_at'        => 'datetime',
+        'answered_at'       => 'datetime',
+        'answer_deleted_at' => 'datetime',
     ];
 
     protected $fillable = [
         'content', 'status', 'asked_by', 'claimed_by', 'answered_by',
-        'answer', 'claimed_at', 'answered_at',
+        'answer', 'claimed_at', 'answered_at', 'answer_deleted_at',
     ];
+
+    /**
+     * Whether this question has an answer that has not been soft-deleted.
+     */
+    public function hasVisibleAnswer(): bool
+    {
+        return $this->answer !== null && $this->answer_deleted_at === null;
+    }
 
     public function asker(): BelongsTo
     {

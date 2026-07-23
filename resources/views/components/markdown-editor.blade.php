@@ -36,4 +36,6 @@
             <p class="font-body text-sm italic text-soil-400">Preview will appear here…</p>
         </div>
     </div>
+
+    <x-markdown-cheatsheet />
 </div>

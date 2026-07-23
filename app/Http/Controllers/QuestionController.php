@@ -20,7 +20,7 @@ class QuestionController extends Controller
 
         return view('questions.show', [
             'question'        => $question,
-            'renderedAnswer' => $question->answer ? $this->markdown->render($question->answer) : null,
+            'renderedAnswer' => $question->hasVisibleAnswer() ? $this->markdown->render($question->answer) : null,
         ]);
     }
 
