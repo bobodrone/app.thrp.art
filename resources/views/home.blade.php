@@ -13,11 +13,11 @@
             <h1 class="font-display text-6xl font-black leading-[0.92] text-soil-900 md:text-7xl lg:text-8xl">
                 Real questions.<br>
                 <em class="not-italic text-leaf-700">Real humans.</em><br>
-                Real answers.
+                Real responses.
             </h1>
 
             <p class="mt-6 max-w-md font-body text-lg text-soil-700">
-                Ask anything. Our creators will answer every question personally.
+                Ask anything. Our creators will respond to every query personally.
             </p>
 
             <div class="mt-10 max-w-xl">
@@ -39,13 +39,13 @@
                         name="content"
                         type="text"
                         value="{{ old('content') }}"
-                        placeholder="Ask your question…"
+                        placeholder="What’s on your mind…"
                         maxlength="2000"
                         class="flex-1 rounded-xl border-2 border-soil-900/20 bg-white/90 px-5 py-3.5 text-soil-900 shadow-md backdrop-blur-sm placeholder:text-soil-600/60 focus:border-leaf-600 focus:ring-0 focus:bg-white"
                     />
                     <button type="submit"
                         class="rounded-xl bg-soil-900 px-6 py-3.5 font-semibold text-sun-500 shadow-md hover:bg-soil-800 transition-colors whitespace-nowrap">
-                        Ask →
+                        Go →
                     </button>
                 </form>
 

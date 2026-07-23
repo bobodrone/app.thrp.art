@@ -16,7 +16,7 @@
 
         <!-- Links -->
         <div class="flex items-center gap-5 text-sm font-medium" x-data="{ open: false }" @click.away="open = false">
-
+            <a href="https://thrp.art" target="_blank" class="text-sun-400 hover:text-white transition-colors">What’s it all about?</a>
             @if ($user)
                 @if (in_array($user->role->value, [UserRole::Creator->value, UserRole::Admin->value]))
                     <a href="{{ route('creator.dashboard') }}" class="text-leaf-100 hover:text-white transition-colors">Creator</a>
