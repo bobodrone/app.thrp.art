@@ -7,6 +7,20 @@ use App\Http\Controllers\MyQuestionsController;
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\SettingsController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Artisan;
+
+// Run cron
+Route::get('/cron/run', function () {
+    abort_unless(
+        hash_equals(config('app.cron_token'), request('token', '')),
+        404
+    );
+
+    Artisan::call('schedule:run');
+
+    return response(Artisan::output(), 200)
+        ->header('Content-Type', 'text/plain');
+});
 
 // Public home (ask form + question feed)
 Route::get('/', [HomeController::class, 'index'])->name('home');
