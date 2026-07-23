@@ -73,7 +73,7 @@
                     <h2 class="font-display text-2xl font-bold text-soil-800">Questions</h2>
                     <span class="font-body text-sm text-soil-500">{{ $count }} question{{ $count === 1 ? '' : 's' }}</span>
                 </div>
-                <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                <div class="grid gap-5 items-start sm:grid-cols-2 lg:grid-cols-3">
                     @foreach ($questions as $row)
                         <x-question-card :question="$row['question']" :renderedAnswer="$row['renderedAnswer']" />
                     @endforeach
