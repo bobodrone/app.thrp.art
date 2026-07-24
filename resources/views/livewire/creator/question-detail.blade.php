@@ -1,6 +1,9 @@
 <div class="mx-auto max-w-3xl px-4 py-10">
     <a href="{{ route('creator.dashboard') }}" class="mb-6 inline-block font-body text-sm font-semibold text-leaf-600 hover:underline">← Creator Dashboard</a>
 
+    @if (session('claim_error'))
+        <p class="mb-4 rounded-xl border border-poppy-100 bg-poppy-100 px-4 py-3 font-body text-sm text-poppy-600">{{ session('claim_error') }}</p>
+    @endif
     @error('claim')
         <p class="mb-4 rounded-xl border border-poppy-100 bg-poppy-100 px-4 py-3 font-body text-sm text-poppy-600">{{ $message }}</p>
     @enderror

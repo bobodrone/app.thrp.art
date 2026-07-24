@@ -4,6 +4,7 @@ use App\Http\Controllers\AdminBootstrapController;
 use App\Http\Controllers\CreatorAnsweredController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MyQuestionsController;
+use App\Http\Controllers\QuestionClaimController;
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\SettingsController;
 use Illuminate\Support\Facades\Route;
@@ -57,6 +58,7 @@ Route::middleware(['auth', 'role:creator,admin'])->prefix('creator')->name('crea
     Route::get('/',               \App\Livewire\CreatorDashboard::class)->name('dashboard');
     Route::get('/answered',       [CreatorAnsweredController::class, 'index'])->name('answered');
     Route::get('/questions/{question}', \App\Livewire\CreatorQuestionDetail::class)->name('questions.show');
+    Route::post('/questions/{question}/claim', [QuestionClaimController::class, 'store'])->name('questions.claim');
 });
 
 // Admin area (built out in Phases 6–7 — stubs)

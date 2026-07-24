@@ -38,6 +38,42 @@ class Question extends Model
     }
 
     /**
+     * Take an open question. The status check lives in the WHERE clause so two
+     * creators clicking at the same moment cannot both win — the loser gets false.
+     */
+    public function claimBy(User $user): bool
+    {
+        return static::whereKey($this->getKey())
+            ->where('status', QuestionStatus::Asked)
+            ->update([
+                'status'     => QuestionStatus::Claimed,
+                'claimed_by' => $user->id,
+                'claimed_at' => now(),
+            ]) === 1;
+    }
+
+    /**
+     * Creators and admins may claim, but only while nobody else has.
+     */
+    public function isClaimableBy(?User $user): bool
+    {
+        return $user !== null
+            && $user->role->isAtLeast(UserRole::Creator)
+            && $this->status === QuestionStatus::Asked;
+    }
+
+    /**
+     * Claimed by this user and still waiting on their answer — nobody else
+     * gets a way in.
+     */
+    public function isAwaitingAnswerFrom(?User $user): bool
+    {
+        return $user !== null
+            && $this->status === QuestionStatus::Claimed
+            && $this->claimed_by === $user->id;
+    }
+
+    /**
      * Only the creator who wrote the answer, or an admin, may edit it —
      * and only while there is a visible (non-deleted) answer.
      */

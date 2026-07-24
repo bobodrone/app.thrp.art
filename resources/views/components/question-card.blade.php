@@ -65,11 +65,14 @@
         </p>
     @endif
 
-    {{-- View full page link when expanded --}}
-    <a x-show="expanded" x-cloak
-       href="{{ route('questions.show', $question->id) }}"
-       @click.stop
-       class="mt-4 inline-block font-body text-xs font-semibold text-leaf-600 underline underline-offset-2 hover:text-leaf-700">
-        View full page →
-    </a>
+    {{-- Actions when expanded --}}
+    <div x-show="expanded" x-cloak class="mt-4 flex items-center justify-between gap-3">
+        <a href="{{ route('questions.show', $question->id) }}"
+           @click.stop
+           class="font-body text-xs font-semibold text-leaf-600 underline underline-offset-2 hover:text-leaf-700">
+            View full page →
+        </a>
+
+        <x-question-action :question="$question" />
+    </div>
 </div>

@@ -34,15 +34,9 @@ class CreatorDashboard extends Component
 
     public function claim($questionId): ?RedirectResponse
     {
-        $updated = Question::where('id', $questionId)
-            ->where('status', QuestionStatus::Asked)
-            ->update([
-                'status'      => QuestionStatus::Claimed,
-                'claimed_by'  => auth()->id(),
-                'claimed_at'  => now(),
-            ]);
+        $claimed = Question::findOrFail($questionId)->claimBy(auth()->user());
 
-        if ($updated === 0) {
+        if (! $claimed) {
             $this->addError('claim_' . $questionId, 'Question has already been claimed by someone else.');
             return null;
         }

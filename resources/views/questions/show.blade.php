@@ -24,9 +24,22 @@
                     </p>
                 @endif
 
-                @if ($question->status === \App\Enums\QuestionStatus::Claimed && $question->claimer)
-                    <div class="mt-6 rounded-xl bg-sky-100 px-4 py-3 font-body text-sm text-sky-600">
-                        Being answered by <strong>{{ $question->claimer->name }}</strong>…
+                @if ($question->isClaimableBy(auth()->user()))
+                    <div class="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-leaf-200 bg-leaf-100 px-4 py-3">
+                        <p class="font-body text-sm text-leaf-700">No one has answered this yet.</p>
+                        <x-question-action :question="$question" size="md" />
+                    </div>
+                @elseif ($question->status === \App\Enums\QuestionStatus::Claimed && $question->claimer)
+                    <div class="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-sky-100 px-4 py-3">
+                        <p class="font-body text-sm text-sky-600">
+                            @if ($question->isAwaitingAnswerFrom(auth()->user()))
+                                You claimed this question — pick up where you left off.
+                            @else
+                                Being answered by <strong>{{ $question->claimer->name }}</strong>…
+                            @endif
+                        </p>
+                        {{-- Only the claimer gets a link back; for everyone else this renders nothing. --}}
+                        <x-question-action :question="$question" size="md" />
                     </div>
                 @endif
 

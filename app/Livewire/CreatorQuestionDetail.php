@@ -59,15 +59,9 @@ class CreatorQuestionDetail extends Component
 
     public function claim()
     {
-        $updated = Question::where('id', $this->questionId)
-            ->where('status', QuestionStatus::Asked)
-            ->update([
-                'status'      => QuestionStatus::Claimed,
-                'claimed_by'  => auth()->id(),
-                'claimed_at'  => now(),
-            ]);
+        $claimed = Question::findOrFail($this->questionId)->claimBy(auth()->user());
 
-        if ($updated === 0) {
+        if (! $claimed) {
             $this->addError('claim', 'Question has already been claimed by someone else.');
             return;
         }
