@@ -17,7 +17,7 @@ class HomeController extends Controller
         Livewire::forceAssetInjection();
 
         $questions = Question::with(['asker:id,name', 'answerer:id,name'])
-            ->select(['id', 'content', 'status', 'answer', 'asked_by', 'answered_by', 'created_at', 'answered_at', 'answer_deleted_at'])
+            ->select(['id', 'content', 'status', 'answer', 'answer_image_path', 'asked_by', 'answered_by', 'created_at', 'answered_at', 'answer_deleted_at'])
             ->latest('created_at')
             ->limit(20)
             ->get()

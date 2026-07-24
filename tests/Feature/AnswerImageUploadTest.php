@@ -218,6 +218,26 @@ class AnswerImageUploadTest extends TestCase
             ->assertSee($this->disk()->url($path), escape: false);
     }
 
+    public function test_image_is_shown_in_the_expanded_card_on_the_home_feed(): void
+    {
+        $path = UploadedFile::fake()->image('feed.jpg')->store('answers', 'public');
+
+        Question::factory()->create([
+            'asked_by'          => User::factory()->create()->id,
+            'status'            => \App\Enums\QuestionStatus::Answered,
+            'answer'            => 'An answer with a picture attached.',
+            'answer_image_path' => $path,
+            'answered_by'       => User::factory()->creator()->create()->id,
+            'answered_at'       => now(),
+        ]);
+
+        // The feed narrows its select(), so the column has to be listed there
+        // or the attribute is silently absent and no image renders.
+        $this->get('/')
+            ->assertStatus(200)
+            ->assertSee($this->disk()->url($path), escape: false);
+    }
+
     public function test_image_is_hidden_when_the_answer_is_soft_deleted(): void
     {
         $path = UploadedFile::fake()->image('hidden.jpg')->store('answers', 'public');
