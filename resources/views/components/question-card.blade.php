@@ -41,6 +41,9 @@
                 <x-flower size="16" petalColor="#FFD600" centerColor="#1A5C38" dotColor="#FFD600" />
                 <p class="font-body text-xs font-semibold uppercase tracking-wider text-leaf-600">Answer</p>
             </div>
+            @if ($imageUrl = $question->answerImageUrl())
+                <x-answer-image :url="$imageUrl" />
+            @endif
             <div class="prose prose-sm max-w-none font-body prose-headings:font-display prose-a:text-leaf-600">
                 {!! $renderedAnswer !!}
             </div>

@@ -272,4 +272,36 @@ The answer involves **tea** and *patience*. Here is why.')
         $response->assertSee('Mine answered');
         $response->assertDontSee('Theirs answered');
     }
+
+    public function test_answered_history_links_the_answerer_to_the_editable_view(): void
+    {
+        $creator = User::factory()->creator()->create();
+        $asker   = User::factory()->create();
+        $q = Question::factory()->answeredBy($creator)->create(['asked_by' => $asker->id]);
+
+        $response = $this->actingAs($creator)->get('/creator/answered');
+
+        $response->assertStatus(200);
+        $response->assertSee('Edit answer');
+        $response->assertSee(route('creator.questions.show', $q));
+    }
+
+    public function test_answered_history_shows_admins_every_answer_as_editable(): void
+    {
+        $admin   = User::factory()->admin()->create();
+        $creator = User::factory()->creator()->create(['name' => 'Clea Creator']);
+        $asker   = User::factory()->create();
+        $q = Question::factory()->answeredBy($creator)->create([
+            'asked_by' => $asker->id,
+            'content'  => 'Answered by somebody else',
+        ]);
+
+        $response = $this->actingAs($admin)->get('/creator/answered');
+
+        $response->assertStatus(200);
+        $response->assertSee('Answered by somebody else');
+        $response->assertSee('Clea Creator');
+        $response->assertSee('Edit answer');
+        $response->assertSee(route('creator.questions.show', $q));
+    }
 }

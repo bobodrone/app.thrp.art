@@ -25,9 +25,10 @@ rsync $test -avzh \
   --exclude=".git" \
   --exclude=".gitignore" \
   --exclude="storage" \
+  --exclude="public/storage" \
   --exclude="public/.htaccess" \
   --exclude="public/hot" \
   --delete \
   ./ "${WEB_RELEASE_DIR}/"
 
-ssh $WEB_USER_HOST "cd $WEB_BASE_PATH && php8.4-cli artisan migrate --force && php8.4-cli artisan view:clear && php8.4-cli artisan cache:clear" 
+ssh $WEB_USER_HOST "cd $WEB_BASE_PATH && php8.4-cli artisan migrate --force && php8.4-cli artisan storage:link && php8.4-cli artisan view:clear && php8.4-cli artisan cache:clear"

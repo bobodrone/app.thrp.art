@@ -51,6 +51,11 @@
             <p class="mb-4 font-body text-sm font-medium text-soil-700">Write your answer</p>
 
             <div class="space-y-4">
+                <x-image-upload
+                    wire-model="answerImage"
+                    clear-action="clearAnswerImage"
+                    :current-url="$newImagePreview"
+                />
                 <x-markdown-editor wire-model="answer" :initial="$answer" />
                 <div class="flex justify-end">
                     <button type="button"
@@ -83,6 +88,11 @@
                 <p class="mb-4 font-body text-sm font-medium text-soil-700">Edit answer</p>
 
                 <div class="space-y-4" wire:key="edit-answer-{{ $question->id }}">
+                    <x-image-upload
+                        wire-model="answerImageDraft"
+                        clear-action="clearAnswerImageDraft"
+                        :current-url="$editImagePreview"
+                    />
                     <x-markdown-editor wire-model="answerDraft" :initial="$answerDraft" />
                     @error('answerDraft') <p class="font-body text-xs text-poppy-600">{{ $message }}</p> @enderror
 
@@ -107,6 +117,9 @@
                         </button>
                     @endif
                 </div>
+                @if ($imageUrl = $question->answerImageUrl())
+                    <x-answer-image :url="$imageUrl" />
+                @endif
                 <div class="prose prose-sm max-w-none font-body prose-headings:font-display prose-a:text-leaf-600">
                     {!! $renderedAnswer !!}
                 </div>

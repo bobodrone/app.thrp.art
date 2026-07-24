@@ -14,6 +14,10 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        //
+        // Livewire caps temporary uploads at 12 MB by default, before our own
+        // rules ever run. Keep that ceiling in step with the .env limit.
+        config()->set('livewire.temporary_file_upload.rules', [
+            'required', 'file', 'max:'.config('uploads.answer_image.max_kb'),
+        ]);
     }
 }
