@@ -31,4 +31,6 @@ rsync $test -avzh \
   --delete \
   ./ "${WEB_RELEASE_DIR}/"
 
-ssh $WEB_USER_HOST "cd $WEB_BASE_PATH && php8.4-cli artisan migrate --force && php8.4-cli artisan storage:link && php8.4-cli artisan view:clear && php8.4-cli artisan cache:clear"
+# config:clear runs first: bootstrap/cache is never rsynced, so a config cache
+# left there would hide newly added config files (e.g. config/uploads.php).
+ssh $WEB_USER_HOST "cd $WEB_BASE_PATH && php8.4-cli artisan config:clear && php8.4-cli artisan migrate --force && php8.4-cli artisan storage:link && php8.4-cli artisan view:clear && php8.4-cli artisan cache:clear"
