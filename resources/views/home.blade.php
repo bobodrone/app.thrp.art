@@ -10,7 +10,7 @@
                 The Human Response Project
             </p>
 
-            <h1 class="font-display text-6xl font-black leading-[0.92] text-soil-900 md:text-7xl lg:text-8xl">
+            <h1 class="font-display text-5xl font-black leading-[0.92] text-soil-900 md:text-7xl lg:text-8xl">
                 Real questions.<br>
                 <em class="not-italic text-leaf-700">Real humans.</em><br>
                 Real responses.
@@ -41,7 +41,7 @@
                         value="{{ old('content') }}"
                         placeholder="What’s on your mind…"
                         maxlength="2000"
-                        class="flex-1 rounded-xl border-2 border-soil-900/20 bg-white/90 px-5 py-3.5 text-soil-900 shadow-md backdrop-blur-sm placeholder:text-soil-600/60 focus:border-leaf-600 focus:ring-0 focus:bg-white"
+                        class="min-w-0 flex-1 rounded-xl border-2 border-soil-900/20 bg-white/90 px-5 py-3.5 text-soil-900 shadow-md backdrop-blur-sm placeholder:text-soil-600/60 focus:border-leaf-600 focus:ring-0 focus:bg-white"
                     />
                     <button type="submit"
                         class="rounded-xl bg-soil-900 px-6 py-3.5 font-semibold text-sun-500 shadow-md hover:bg-soil-800 transition-colors whitespace-nowrap">

@@ -2,7 +2,7 @@
 
     {{-- Large sunflower — top right --}}
     <svg width="220" height="220" viewBox="0 0 220 220"
-        class="absolute -right-8 -top-8 opacity-90"
+        class="absolute -right-8 -top-8 opacity-90 hidden sm:block"
         xmlns="http://www.w3.org/2000/svg">
         @for ($i = 0; $i < 12; $i++)
             <ellipse cx="110" cy="32" rx="12" ry="40"
@@ -22,7 +22,7 @@
 
     {{-- Medium poppy — left mid --}}
     <svg width="140" height="140" viewBox="0 0 140 140"
-        class="absolute -left-4 top-1/3 opacity-85"
+        class="absolute -left-4 top-1/3 opacity-85 hidden lg:block"
         xmlns="http://www.w3.org/2000/svg">
         @for ($i = 0; $i < 5; $i++)
             <ellipse cx="70" cy="22" rx="10" ry="28"
