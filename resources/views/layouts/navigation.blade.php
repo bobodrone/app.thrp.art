@@ -9,9 +9,9 @@
             $navLinks[] = ['label' => 'Creator Dashboard', 'url' => route('creator.dashboard')];
         }
         if ($user->role === UserRole::Admin) {
-            $navLinks[] = ['label' => 'Questions', 'url' => route('admin.questions')];
-            $navLinks[] = ['label' => 'Creators', 'url' => route('admin.creators')];
-            $navLinks[] = ['label' => 'Admins', 'url' => route('admin.users')];
+            $navLinks[] = ['label' => 'Questions admin', 'url' => route('admin.questions')];
+            $navLinks[] = ['label' => 'Creators admin', 'url' => route('admin.creators')];
+            $navLinks[] = ['label' => 'Admins admin', 'url' => route('admin.users')];
         }
         $navLinks[] = ['label' => 'My Questions', 'url' => route('my-questions')];
         if ($user->role === UserRole::Member) {
