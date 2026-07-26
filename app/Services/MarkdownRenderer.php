@@ -43,7 +43,7 @@ class MarkdownRenderer
      * A one-line, plain-text preview of Markdown — for table cells and other
      * places where rendered HTML cannot be truncated safely.
      */
-    public function excerpt(string $markdown, int $limit = 70): string
+    public function excerpt(string $markdown, int $limit = 64): string
     {
         $text = html_entity_decode(
             strip_tags($this->renderBio($markdown)),
