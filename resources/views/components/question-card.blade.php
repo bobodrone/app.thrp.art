@@ -2,6 +2,10 @@
     /** @var \App\Models\Question $question */
     /** @var string|null  $renderedAnswer */
     $renderedAnswer = $renderedAnswer ?? null;
+
+    // Only the main answer fits on a card; the rest are a nudge to the full page.
+    $answerCount = $question->visibleAnswerCount();
+    $otherCount  = max($answerCount - 1, 0);
 @endphp
 
 <div
@@ -47,11 +51,19 @@
             <div class="prose prose-sm max-w-none font-body prose-headings:font-display prose-a:text-leaf-600">
                 {!! $renderedAnswer !!}
             </div>
-            @if ($question->answerer)
+            @if ($question->answererNameFor(auth()->user()))
                 <p class="mt-3 font-body text-xs text-soil-400">
-                    Answered by <span class="font-medium text-soil-600">{{ $question->answerer->name }}</span>
-                    @if ($question->answered_at)&nbsp;· {{ $question->answered_at->diffForHumans() }}@endif
+                    Answered by <x-answerer-name :answer="$question->primaryAnswer" :viewer="auth()->user()" class="font-medium text-soil-600" />
+                    @if ($question->primaryAnswer->published_at)&nbsp;· {{ $question->primaryAnswer->published_at->diffForHumans() }}@endif
                 </p>
+            @endif
+
+            @if ($otherCount > 0)
+                <a href="{{ route('questions.show', $question->id) }}"
+                   @click.stop
+                   class="mt-3 inline-block font-body text-xs font-semibold text-leaf-600 hover:underline">
+                    +{{ $otherCount }} {{ \Illuminate\Support\Str::plural('other answer', $otherCount) }} from the community →
+                </a>
             @endif
         </div>
     </template>
@@ -61,7 +73,11 @@
         <p x-show="!expanded" x-cloak
            class="mt-2 flex items-center gap-1.5 font-body text-xs font-medium text-leaf-600">
             <x-flower size="12" petalColor="#FFD600" centerColor="#1A5C38" dotColor="#FFD600" />
-            Has an answer — click to read
+            @if ($answerCount > 1)
+                {{ $answerCount }} answers — click to read
+            @else
+                Has an answer — click to read
+            @endif
         </p>
     @endif
 

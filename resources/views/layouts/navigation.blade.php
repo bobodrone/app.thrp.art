@@ -34,6 +34,7 @@
         <!-- Desktop links -->
         <div class="hidden md:flex items-center gap-5 text-sm font-medium" x-data="{ open: false }" @click.away="open = false">
             <a href="https://thrp.art" target="_blank" class="text-sun-400 hover:text-white transition-colors">What’s it all about?</a>
+            <a href="{{ route('creators.index') }}" class="text-leaf-100 hover:text-white transition-colors">Creators</a>
             @if ($user)
                 @foreach ($navLinks as $link)
                     <a href="{{ $link['url'] }}" class="text-leaf-100 hover:text-white transition-colors">{{ $link['label'] }}</a>
@@ -56,6 +57,9 @@
                         x-transition
                         class="absolute right-0 top-full z-10 mt-1.5 w-44 rounded-xl border border-leaf-600 bg-leaf-800 py-1 shadow-xl"
                     >
+                        @if ($user->isCreator())
+                            <a href="{{ route('creator.profile') }}" class="block px-4 py-2.5 text-sm text-leaf-100 hover:bg-leaf-700 hover:text-white transition-colors">Creator profile</a>
+                        @endif
                         <a href="{{ route('settings') }}" class="block px-4 py-2.5 text-sm text-leaf-100 hover:bg-leaf-700 hover:text-white transition-colors">Settings</a>
                         <form method="post" action="{{ route('logout') }}">
                             @csrf
@@ -97,6 +101,7 @@
     >
         <div class="flex flex-col text-sm font-medium">
             <a href="https://thrp.art" target="_blank" class="py-2.5 text-sun-400 hover:text-white transition-colors">What’s it all about?</a>
+            <a href="{{ route('creators.index') }}" class="py-2.5 text-leaf-100 hover:text-white transition-colors">Creators</a>
             @if ($user)
                 @foreach ($navLinks as $link)
                     <a href="{{ $link['url'] }}" class="py-2.5 text-leaf-100 hover:text-white transition-colors">{{ $link['label'] }}</a>
@@ -105,6 +110,9 @@
                 <div class="my-2 border-t border-leaf-600"></div>
 
                 <span class="py-1 text-xs uppercase tracking-wider text-leaf-300">{{ $user->name }}</span>
+                @if ($user->isCreator())
+                    <a href="{{ route('creator.profile') }}" class="py-2.5 text-leaf-100 hover:text-white transition-colors">Creator profile</a>
+                @endif
                 <a href="{{ route('settings') }}" class="py-2.5 text-leaf-100 hover:text-white transition-colors">Settings</a>
                 <form method="post" action="{{ route('logout') }}">
                     @csrf

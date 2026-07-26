@@ -38,6 +38,18 @@ return [
             'AutoFormat.RemoveEmpty'   => false,
             'Attr.AllowedFrameTargets' => ['_blank'],
         ],
+        // Creator bios. Deliberately narrower than 'markdown': no headings
+        // (one would out-shout the creator's own name right above it), no
+        // images, and no block quotes or rules — a bio sits in a card and must
+        // not be able to break its layout. Disallowed tags are dropped but
+        // their text is kept, so a typed "# Heading" degrades to plain text.
+        'bio'     => [
+            'HTML.Doctype'             => 'HTML 4.01 Transitional',
+            'HTML.Allowed'             => 'p,br,b,strong,i,em,del,s,code,a[href|title|target|rel],ul,ol,li',
+            'AutoFormat.AutoParagraph' => false,
+            'AutoFormat.RemoveEmpty'   => true,
+            'Attr.AllowedFrameTargets' => ['_blank'],
+        ],
         'test'    => [
             'Attr.EnableID' => 'true',
         ],

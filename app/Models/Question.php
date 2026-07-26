@@ -5,11 +5,13 @@ namespace App\Models;
 use App\Enums\QuestionStatus;
 use App\Enums\UserRole;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 
 class Question extends Model
 {
@@ -18,23 +20,31 @@ class Question extends Model
     use SoftDeletes;
 
     protected $casts = [
-        'status'            => QuestionStatus::class,
-        'claimed_at'        => 'datetime',
-        'answered_at'       => 'datetime',
-        'answer_deleted_at' => 'datetime',
+        'status'     => QuestionStatus::class,
+        'claimed_at' => 'datetime',
     ];
 
     protected $fillable = [
-        'content', 'status', 'asked_by', 'claimed_by', 'answered_by',
-        'answer', 'answer_image_path', 'claimed_at', 'answered_at', 'answer_deleted_at',
+        'content', 'status', 'asked_by', 'claimed_by', 'primary_answer_id', 'claimed_at',
     ];
 
     /**
-     * Whether this question has an answer that has not been soft-deleted.
+     * Whether this question has a main answer that has not been soft-deleted.
+     * A hidden answer resolves the relation to null, so the question reads as
+     * unanswered without losing the pointer needed to restore it.
      */
     public function hasVisibleAnswer(): bool
     {
-        return $this->answer !== null && $this->answer_deleted_at === null;
+        return $this->primaryAnswer !== null;
+    }
+
+    /**
+     * The main answer exists but has been hidden by an admin — the question
+     * reads as unanswered while the row stays recoverable.
+     */
+    public function hasHiddenAnswer(): bool
+    {
+        return $this->primary_answer_id !== null && $this->primaryAnswer === null;
     }
 
     /**
@@ -53,7 +63,8 @@ class Question extends Model
     }
 
     /**
-     * Creators and admins may claim, but only while nobody else has.
+     * Creators and admins may claim, but only while nobody else has. Claiming
+     * only ever races for the main answer — alternatives need no claim.
      */
     public function isClaimableBy(?User $user): bool
     {
@@ -74,30 +85,214 @@ class Question extends Model
     }
 
     /**
-     * Only the creator who wrote the answer, or an admin, may edit it —
-     * and only while there is a visible (non-deleted) answer.
+     * Whether $user may add an alternative answer. No claim is needed — each
+     * creator writes their own row — but the main answer has to be up first,
+     * and one answer per creator is the limit.
      */
-    public function isAnswerEditableBy(?User $user): bool
+    public function isAnswerableBy(?User $user): bool
     {
-        if (! $user || ! $this->hasVisibleAnswer()) {
-            return false;
-        }
-
-        return $this->answered_by === $user->id
-            || $user->role === UserRole::Admin;
+        return $user !== null
+            && $user->role->isAtLeast(UserRole::Creator)
+            && $this->hasVisibleAnswer()
+            && ! $this->hasAnswerFrom($user);
     }
 
     /**
-     * Public URL of the image attached to the answer, or null when there is
-     * none — or when the answer itself is hidden.
+     * Whether $user already holds a visible answer here. A hidden one does not
+     * count: re-answering revives that row rather than adding a second.
      */
-    public function answerImageUrl(): ?string
+    public function hasAnswerFrom(User $user): bool
     {
-        if ($this->answer_image_path === null || ! $this->hasVisibleAnswer()) {
+        if ($this->relationLoaded('answers')) {
+            return $this->answers->contains('created_by', $user->id);
+        }
+
+        return $this->answers()->writtenBy($user->id)->exists();
+    }
+
+    /**
+     * Publish the claimer's answer into the main slot, or null when the claim
+     * no longer holds. The claim is re-checked in the WHERE clause and before
+     * anything is written, so a creator who lost the question while writing
+     * lands nothing at all.
+     */
+    public function publishPrimaryAnswerFrom(User $author, string $body, ?string $imagePath = null): ?Answer
+    {
+        return DB::transaction(function () use ($author, $body, $imagePath) {
+            $claimed = static::whereKey($this->getKey())
+                ->where('status', QuestionStatus::Claimed)
+                ->where('claimed_by', $author->id)
+                ->update(['status' => QuestionStatus::Answered]);
+
+            if ($claimed !== 1) {
+                return null;
+            }
+
+            $answer = $this->upsertAnswerFrom($author, $body, $imagePath);
+
+            static::whereKey($this->getKey())->update(['primary_answer_id' => $answer->id]);
+
+            $this->forceFill([
+                'status'            => QuestionStatus::Answered,
+                'primary_answer_id' => $answer->id,
+            ])->syncOriginal();
+
+            $this->setRelation('primaryAnswer', $answer);
+
+            return $answer;
+        });
+    }
+
+    /**
+     * Add this creator's alternative take alongside the main answer, or null
+     * when they are not allowed one.
+     */
+    public function addAlternativeAnswerFrom(User $author, string $body, ?string $imagePath = null): ?Answer
+    {
+        if (! $this->isAnswerableBy($author)) {
             return null;
         }
 
-        return Storage::disk(config('uploads.answer_image.disk'))->url($this->answer_image_path);
+        return $this->upsertAnswerFrom($author, $body, $imagePath);
+    }
+
+    /**
+     * Hide an answer, keeping it recoverable. Losing the main answer reopens
+     * the question so it can be claimed and answered again; alternatives just
+     * disappear from the list.
+     */
+    public function removeAnswer(Answer $answer): void
+    {
+        DB::transaction(function () use ($answer) {
+            $answer->delete();
+
+            if ($this->primary_answer_id === $answer->id) {
+                $this->forceFill([
+                    'status'     => QuestionStatus::Asked,
+                    'claimed_by' => null,
+                    'claimed_at' => null,
+                ])->save();
+            }
+        });
+    }
+
+    /**
+     * Unhide an answer. If the main slot was refilled while this one was
+     * hidden, it comes back as an alternative instead.
+     */
+    public function restoreAnswer(Answer $answer): void
+    {
+        DB::transaction(function () use ($answer) {
+            $answer->restore();
+
+            if ($this->primary_answer_id === $answer->id) {
+                $this->forceFill(['status' => QuestionStatus::Answered])->save();
+            }
+        });
+    }
+
+    /**
+     * Whether $user may hide and restore answers here. Moderation, so admins
+     * only — a creator can rewrite their own answer but never take one down.
+     */
+    public function isModeratableBy(?User $user): bool
+    {
+        return $user?->role === UserRole::Admin;
+    }
+
+    /**
+     * Whether $user may move this answer into the main slot. Moderation, so
+     * admins only — and never for the answer already sitting there.
+     */
+    public function isPromotableBy(?User $user, Answer $answer): bool
+    {
+        return $user?->role === UserRole::Admin
+            && $answer->question_id === $this->id
+            && $this->primary_answer_id !== $answer->id;
+    }
+
+    /**
+     * Move an existing alternative into the main slot — how an admin replaces a
+     * removed main answer without making the asker wait for a fresh claim.
+     */
+    public function promoteToPrimary(Answer $answer): void
+    {
+        $this->forceFill([
+            'status'            => QuestionStatus::Answered,
+            'primary_answer_id' => $answer->id,
+            // The claim tracks whoever holds the main answer.
+            'claimed_by'        => $answer->created_by,
+            'claimed_at'        => $this->claimed_at ?? now(),
+        ])->save();
+    }
+
+    /**
+     * Create this creator's answer, or overwrite the one they already have.
+     * A reopened question still carries the creator's hidden row — reusing it
+     * keeps the one-answer-per-creator index happy.
+     */
+    protected function upsertAnswerFrom(User $author, string $body, ?string $imagePath): Answer
+    {
+        $answer = $this->answers()->withTrashed()->firstOrNew(['created_by' => $author->id]);
+
+        $answer->forceFill([
+            'body'         => $body,
+            'image_path'   => $imagePath,
+            // Snapshotted, so a later change of preference cannot unmask (or
+            // retroactively anonymise) an answer already published.
+            'anonymously'  => $author->posts_anonymously,
+            'published_at' => now(),
+            'deleted_at'   => null,
+        ])->save();
+
+        return $answer;
+    }
+
+    /**
+     * How many answers are on show — the main one plus its alternatives.
+     */
+    public function visibleAnswerCount(): int
+    {
+        return $this->relationLoaded('answers')
+            ? $this->answers->count()
+            : $this->answers()->count();
+    }
+
+    /**
+     * Alternative answers, oldest first. Reads the loaded `answers` relation,
+     * so eager-load it when rendering a list.
+     */
+    public function otherAnswers(): Collection
+    {
+        return $this->answers
+            ->reject(fn (Answer $answer) => $answer->id === $this->primary_answer_id)
+            ->sortBy('published_at')
+            ->values();
+    }
+
+    /**
+     * How the main answer's creator should be credited to $viewer.
+     */
+    public function answererNameFor(?User $viewer): ?string
+    {
+        return $this->primaryAnswer?->authorNameFor($viewer);
+    }
+
+    /**
+     * Public URL of the image attached to the main answer, or null when there
+     * is none — or when that answer is hidden.
+     */
+    public function answerImageUrl(): ?string
+    {
+        return $this->primaryAnswer?->imageUrl();
+    }
+
+    /**
+     * Whether $user may edit the main answer.
+     */
+    public function isAnswerEditableBy(?User $user): bool
+    {
+        return $this->primaryAnswer?->isEditableBy($user) ?? false;
     }
 
     public function asker(): BelongsTo
@@ -110,9 +305,14 @@ class Question extends Model
         return $this->belongsTo(User::class, 'claimed_by');
     }
 
-    public function answerer(): BelongsTo
+    public function answers(): HasMany
     {
-        return $this->belongsTo(User::class, 'answered_by');
+        return $this->hasMany(Answer::class);
+    }
+
+    public function primaryAnswer(): BelongsTo
+    {
+        return $this->belongsTo(Answer::class, 'primary_answer_id');
     }
 
     public function scopeOpen(Builder $q): Builder
@@ -131,8 +331,12 @@ class Question extends Model
         return $q->where('status', QuestionStatus::Answered);
     }
 
+    /**
+     * Questions this creator has answered — as the main answer or as an
+     * alternative.
+     */
     public function scopeAnsweredBy(Builder $q, int $userId): Builder
     {
-        return $q->answered()->where('answered_by', $userId);
+        return $q->whereHas('answers', fn (Builder $a) => $a->writtenBy($userId));
     }
 }

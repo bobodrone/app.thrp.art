@@ -27,8 +27,8 @@
                             <p class="truncate font-body text-sm text-soil-900">{{ \Illuminate\Support\Str::limit($q->content, 120) }}</p>
                             <p class="mt-0.5 font-body text-xs text-soil-400">
                                 @if ($q->asker) Asked by {{ $q->asker->name }} · @endif
-                                @if ($isAdmin && $q->answerer) Answered by {{ $q->answerer->name }} · @endif
-                                @if ($q->answered_at) Answered {{ $q->answered_at->diffForHumans() }}@endif
+                                @if ($isAdmin && $q->primaryAnswer?->author) Answered by {{ $q->primaryAnswer->author->name }} · @endif
+                                @if ($q->last_answered_at) Answered {{ \Illuminate\Support\Carbon::parse($q->last_answered_at)->diffForHumans() }}@endif
                             </p>
                         </div>
                         <span class="shrink-0 font-body text-xs font-semibold text-leaf-600">

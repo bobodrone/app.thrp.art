@@ -41,4 +41,14 @@ return [
         'mime_types' => $csv(env('ANSWER_IMAGE_MIME_TYPES', 'image/jpeg,image/png,image/gif,image/webp')),
     ],
 
+    // Creator profile picture. Same shape as answer_image — smaller by default,
+    // since it is only ever shown as a thumbnail.
+    'avatar' => [
+        'disk'       => env('AVATAR_DISK', 'public'),
+        'directory'  => trim((string) env('AVATAR_DIRECTORY', 'avatars'), '/'),
+        'max_kb'     => (int) env('AVATAR_MAX_KB', 1024),
+        'extensions' => $csv(env('AVATAR_EXTENSIONS', 'jpg,jpeg,png,gif,webp')),
+        'mime_types' => $csv(env('AVATAR_MIME_TYPES', 'image/jpeg,image/png,image/gif,image/webp')),
+    ],
+
 ];

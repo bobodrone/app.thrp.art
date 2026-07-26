@@ -60,7 +60,7 @@ class AdminQuestionsTable extends Component
 
         $this->editingId     = $question->id;
         $this->editContent   = $question->content;
-        $this->editAnswer    = $question->hasVisibleAnswer() ? $question->answer : '';
+        $this->editAnswer    = $question->primaryAnswer->body ?? '';
         $this->editHasAnswer = $question->hasVisibleAnswer();
 
         $this->resetErrorBag();
@@ -82,13 +82,13 @@ class AdminQuestionsTable extends Component
             'editAnswer.between'   => 'Answer must be 10–10 000 characters.',
         ]);
 
-        $data = ['content' => trim($this->editContent)];
+        $question = Question::findOrFail($this->editingId);
+
+        $question->update(['content' => trim($this->editContent)]);
 
         if ($this->editHasAnswer) {
-            $data['answer'] = $this->editAnswer;
+            $question->primaryAnswer?->update(['body' => $this->editAnswer]);
         }
-
-        Question::whereKey($this->editingId)->update($data);
 
         $this->reset(['editingId', 'editContent', 'editAnswer', 'editHasAnswer', 'showEdit']);
         session()->flash('admin-questions-ok', 'Question updated.');
@@ -96,15 +96,14 @@ class AdminQuestionsTable extends Component
 
     public function deleteAnswer(int $id): void
     {
-        // Soft-delete only the answer: keep answer/answered_by/answered_at for
-        // recovery, hide it everywhere, and reopen the question so it can be
-        // reclaimed and answered again.
-        Question::whereKey($id)->update([
-            'status'            => QuestionStatus::Asked,
-            'answer_deleted_at' => now(),
-            'claimed_by'        => null,
-            'claimed_at'        => null,
-        ]);
+        // Soft-delete only the main answer: the row is kept for recovery, and
+        // the question reopens so it can be reclaimed and answered again. Any
+        // alternative answers stay where they are.
+        $question = Question::findOrFail($id);
+
+        if ($answer = $question->primaryAnswer) {
+            $question->removeAnswer($answer);
+        }
 
         $this->reset(['editingId', 'editContent', 'editAnswer', 'editHasAnswer', 'showEdit']);
         session()->flash('admin-questions-ok', 'Answer removed — question reopened.');
@@ -133,12 +132,12 @@ class AdminQuestionsTable extends Component
 
     public function restoreAnswer(int $id): void
     {
-        Question::whereKey($id)
-            ->whereNotNull('answer_deleted_at')
-            ->update([
-                'status'            => QuestionStatus::Answered,
-                'answer_deleted_at' => null,
-            ]);
+        $question = Question::findOrFail($id);
+        $answer   = $question->primaryAnswer()->withTrashed()->first();
+
+        if ($answer?->trashed()) {
+            $question->restoreAnswer($answer);
+        }
 
         session()->flash('admin-questions-ok', 'Answer restored.');
     }
@@ -149,7 +148,8 @@ class AdminQuestionsTable extends Component
 
         $questions = Question::query()
             ->when($this->showDeleted, fn ($q) => $q->withTrashed())
-            ->with(['asker:id,name', 'claimer:id,name', 'answerer:id,name'])
+            ->with(['asker:id,name', 'claimer:id,name', 'primaryAnswer.author:id,name,role'])
+            ->withCount('answers')
             ->when(in_array($this->statusFilter, $validStatuses, true), function ($q) {
                 $q->where('status', $this->statusFilter);
             })

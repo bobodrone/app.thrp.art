@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreQuestionRequest;
+use App\Models\Answer;
 use App\Models\Question;
 use App\Services\MarkdownRenderer;
 use Illuminate\Http\RedirectResponse;
@@ -16,11 +17,21 @@ class QuestionController extends Controller
 
     public function show(Request $request, Question $question): View
     {
-        $question->load(['asker:id,name', 'claimer:id,name', 'answerer:id,name']);
+        $question->load([
+            'asker:id,name',
+            'claimer:id,name',
+            'primaryAnswer.author:id,name,role',
+            // role comes along because each credit links to a public profile.
+            'answers.author:id,name,role',
+        ]);
 
         return view('questions.show', [
             'question'        => $question,
-            'renderedAnswer' => $question->hasVisibleAnswer() ? $this->markdown->render($question->answer) : null,
+            'renderedAnswer' => $question->hasVisibleAnswer() ? $this->markdown->render($question->primaryAnswer->body) : null,
+            'otherAnswers'   => $question->otherAnswers()->map(fn (Answer $answer) => [
+                'answer'   => $answer,
+                'rendered' => $this->markdown->render($answer->body),
+            ]),
         ]);
     }
 

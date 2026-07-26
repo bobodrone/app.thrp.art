@@ -3,11 +3,10 @@
 namespace App\Livewire;
 
 use App\Enums\ApplicationStatus;
-use App\Enums\QuestionStatus;
 use App\Enums\UserRole;
 use App\Mail\ApplicationRejected;
+use App\Models\Answer;
 use App\Models\CreatorApplication;
-use App\Models\Question;
 use App\Models\User;
 use App\Services\UserInviter;
 use Illuminate\Support\Facades\Mail;
@@ -96,12 +95,13 @@ class AdminCreatorManagement extends Component
             ->oldest('created_at')
             ->get();
 
-        // Answered count per creator
-        $answeredCounts = Question::where('status', QuestionStatus::Answered)
-            ->whereNotNull('answered_by')
-            ->selectRaw('answered_by, count(*) as cnt')
-            ->groupBy('answered_by')
-            ->pluck('cnt', 'answered_by');
+        // Answered count per creator — alternatives count too, since writing one
+        // is the same work as writing the main answer.
+        $answeredCounts = Answer::published()
+            ->whereNotNull('created_by')
+            ->selectRaw('created_by, count(*) as cnt')
+            ->groupBy('created_by')
+            ->pluck('cnt', 'created_by');
 
         return view('livewire.admin.creator-management', [
             'pending'         => $pending,

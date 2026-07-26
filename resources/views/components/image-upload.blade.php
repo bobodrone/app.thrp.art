@@ -3,10 +3,12 @@
     'clearAction' => null,    // Livewire method that clears it
     'currentUrl'  => null,    // server-rendered preview: staged upload, else saved image
     'label'       => 'Image (optional)',
+    'config'      => 'answer_image',  // which config/uploads.php entry sets the limits
+    'removeLabel' => 'Remove image',
 ])
 
 @php
-    $config  = config('uploads.answer_image');
+    $config  = config('uploads.'.$config);
     // Accept real MIME types only. iOS transcodes HEIC photos to JPEG when the
     // picker's accept list excludes HEIC, which is why we never list it here.
     $accept  = implode(',', $config['mime_types']);
@@ -52,7 +54,9 @@
     x-on:livewire-upload-progress="progress = $event.detail.progress"
     class="flex flex-col gap-1"
 >
-    <p class="font-body text-xs font-medium text-soil-600">{{ $label }}</p>
+    @if ($label !== '')
+        <p class="font-body text-xs font-medium text-soil-600">{{ $label }}</p>
+    @endif
 
     <label
         for="{{ $inputId }}"
@@ -108,7 +112,7 @@
                 wire:click="{{ $clearAction }}"
                 class="ml-auto font-body text-xs text-soil-400 hover:text-poppy-600 hover:underline"
             >
-                Remove image
+                {{ $removeLabel }}
             </button>
         @endif
     </div>

@@ -5,6 +5,7 @@ use App\Http\Controllers\CreatorAnsweredController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MyQuestionsController;
 use App\Http\Controllers\QuestionClaimController;
+use App\Http\Controllers\PublicCreatorController;
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\SettingsController;
 use Illuminate\Support\Facades\Route;
@@ -29,6 +30,10 @@ Route::post('/', [QuestionController::class, 'store'])->middleware('auth')->name
 
 // Public question detail
 Route::get('/questions/{question}', [QuestionController::class, 'show'])->name('questions.show');
+
+// Public creator directory
+Route::get('/creators', \App\Livewire\CreatorsIndex::class)->name('creators.index');
+Route::get('/creators/{user}', [PublicCreatorController::class, 'show'])->name('creators.show');
 
 // Public creator application
 Route::get('/apply', \App\Livewire\CreatorApplicationForm::class)->name('apply');
@@ -56,6 +61,7 @@ Route::middleware('auth')->group(function () {
 // Creator area (creator or admin)
 Route::middleware(['auth', 'role:creator,admin'])->prefix('creator')->name('creator.')->group(function () {
     Route::get('/',               \App\Livewire\CreatorDashboard::class)->name('dashboard');
+    Route::get('/profile',        \App\Livewire\CreatorProfile::class)->name('profile');
     Route::get('/answered',       [CreatorAnsweredController::class, 'index'])->name('answered');
     Route::get('/questions/{question}', \App\Livewire\CreatorQuestionDetail::class)->name('questions.show');
     Route::post('/questions/{question}/claim', [QuestionClaimController::class, 'store'])->name('questions.claim');

@@ -43,9 +43,9 @@ class AnswerImageUploadTest extends TestCase
             ->assertHasNoErrors();
 
         $q->refresh();
-        $this->assertNotNull($q->answer_image_path);
-        $this->assertStringStartsWith('answers/', $q->answer_image_path);
-        $this->disk()->assertExists($q->answer_image_path);
+        $this->assertNotNull($q->primaryAnswer->image_path);
+        $this->assertStringStartsWith('answers/', $q->primaryAnswer->image_path);
+        $this->disk()->assertExists($q->primaryAnswer->image_path);
     }
 
     public function test_answer_without_an_image_still_works(): void
@@ -61,7 +61,7 @@ class AnswerImageUploadTest extends TestCase
             ->call('submitAnswer')
             ->assertHasNoErrors();
 
-        $this->assertNull($q->refresh()->answer_image_path);
+        $this->assertNull($q->refresh()->primaryAnswer?->image_path);
     }
 
     public function test_image_over_the_configured_limit_is_rejected(): void
@@ -78,7 +78,7 @@ class AnswerImageUploadTest extends TestCase
             ->set('answerImage', UploadedFile::fake()->image('huge.jpg')->size(500))
             ->assertHasErrors(['answerImage' => 'max']);
 
-        $this->assertNull($q->refresh()->answer_image_path);
+        $this->assertNull($q->refresh()->primaryAnswer?->image_path);
     }
 
     public function test_non_image_file_is_rejected(): void
@@ -93,7 +93,7 @@ class AnswerImageUploadTest extends TestCase
             ->set('answerImage', UploadedFile::fake()->create('notes.pdf', 20, 'application/pdf'))
             ->assertHasErrors('answerImage');
 
-        $this->assertNull($q->refresh()->answer_image_path);
+        $this->assertNull($q->refresh()->primaryAnswer?->image_path);
     }
 
     public function test_extension_outside_the_configured_list_is_rejected(): void
@@ -117,14 +117,9 @@ class AnswerImageUploadTest extends TestCase
         $creator = User::factory()->creator()->create();
         $old     = UploadedFile::fake()->image('old.jpg')->store('answers', 'public');
 
-        $q = Question::factory()->create([
-            'asked_by'          => User::factory()->create()->id,
-            'status'            => \App\Enums\QuestionStatus::Answered,
-            'answer'            => 'The original answer text.',
-            'answer_image_path' => $old,
-            'answered_by'       => $creator->id,
-            'answered_at'       => now(),
-        ]);
+        $q = Question::factory()
+            ->answeredBy($creator, 'The original answer text.', ['image_path' => $old])
+            ->create(['asked_by' => User::factory()->create()->id]);
 
         Livewire::actingAs($creator)
             ->test(CreatorQuestionDetail::class, ['question' => $q])
@@ -135,9 +130,9 @@ class AnswerImageUploadTest extends TestCase
             ->assertHasNoErrors();
 
         $q->refresh();
-        $this->assertNotSame($old, $q->answer_image_path);
+        $this->assertNotSame($old, $q->primaryAnswer->image_path);
         $this->disk()->assertMissing($old);
-        $this->disk()->assertExists($q->answer_image_path);
+        $this->disk()->assertExists($q->primaryAnswer->image_path);
     }
 
     public function test_creator_can_remove_the_image_while_editing(): void
@@ -145,14 +140,9 @@ class AnswerImageUploadTest extends TestCase
         $creator = User::factory()->creator()->create();
         $old     = UploadedFile::fake()->image('old.jpg')->store('answers', 'public');
 
-        $q = Question::factory()->create([
-            'asked_by'          => User::factory()->create()->id,
-            'status'            => \App\Enums\QuestionStatus::Answered,
-            'answer'            => 'The original answer text.',
-            'answer_image_path' => $old,
-            'answered_by'       => $creator->id,
-            'answered_at'       => now(),
-        ]);
+        $q = Question::factory()
+            ->answeredBy($creator, 'The original answer text.', ['image_path' => $old])
+            ->create(['asked_by' => User::factory()->create()->id]);
 
         Livewire::actingAs($creator)
             ->test(CreatorQuestionDetail::class, ['question' => $q])
@@ -161,7 +151,7 @@ class AnswerImageUploadTest extends TestCase
             ->call('updateAnswer')
             ->assertHasNoErrors();
 
-        $this->assertNull($q->refresh()->answer_image_path);
+        $this->assertNull($q->refresh()->primaryAnswer?->image_path);
         $this->disk()->assertMissing($old);
     }
 
@@ -170,14 +160,9 @@ class AnswerImageUploadTest extends TestCase
         $creator = User::factory()->creator()->create();
         $old     = UploadedFile::fake()->image('old.jpg')->store('answers', 'public');
 
-        $q = Question::factory()->create([
-            'asked_by'          => User::factory()->create()->id,
-            'status'            => \App\Enums\QuestionStatus::Answered,
-            'answer'            => 'The original answer text.',
-            'answer_image_path' => $old,
-            'answered_by'       => $creator->id,
-            'answered_at'       => now(),
-        ]);
+        $q = Question::factory()
+            ->answeredBy($creator, 'The original answer text.', ['image_path' => $old])
+            ->create(['asked_by' => User::factory()->create()->id]);
 
         $component = Livewire::actingAs($creator)
             ->test(CreatorQuestionDetail::class, ['question' => $q])
@@ -195,23 +180,18 @@ class AnswerImageUploadTest extends TestCase
             ->assertHasNoErrors();
 
         $q->refresh();
-        $this->assertNotNull($q->answer_image_path);
-        $this->assertNotSame($old, $q->answer_image_path);
-        $this->disk()->assertExists($q->answer_image_path);
+        $this->assertNotNull($q->primaryAnswer->image_path);
+        $this->assertNotSame($old, $q->primaryAnswer->image_path);
+        $this->disk()->assertExists($q->primaryAnswer->image_path);
     }
 
     public function test_image_is_shown_on_the_public_question_page(): void
     {
         $path = UploadedFile::fake()->image('shown.jpg')->store('answers', 'public');
 
-        $q = Question::factory()->create([
-            'asked_by'          => User::factory()->create()->id,
-            'status'            => \App\Enums\QuestionStatus::Answered,
-            'answer'            => 'An answer with a picture attached.',
-            'answer_image_path' => $path,
-            'answered_by'       => User::factory()->creator()->create()->id,
-            'answered_at'       => now(),
-        ]);
+        $q = Question::factory()
+            ->answeredBy(User::factory()->creator()->create(), 'An answer with a picture attached.', ['image_path' => $path])
+            ->create(['asked_by' => User::factory()->create()->id]);
 
         $this->get("/questions/{$q->id}")
             ->assertStatus(200)
@@ -222,17 +202,12 @@ class AnswerImageUploadTest extends TestCase
     {
         $path = UploadedFile::fake()->image('feed.jpg')->store('answers', 'public');
 
-        Question::factory()->create([
-            'asked_by'          => User::factory()->create()->id,
-            'status'            => \App\Enums\QuestionStatus::Answered,
-            'answer'            => 'An answer with a picture attached.',
-            'answer_image_path' => $path,
-            'answered_by'       => User::factory()->creator()->create()->id,
-            'answered_at'       => now(),
-        ]);
+        Question::factory()
+            ->answeredBy(User::factory()->creator()->create(), 'An answer with a picture attached.', ['image_path' => $path])
+            ->create(['asked_by' => User::factory()->create()->id]);
 
-        // The feed narrows its select(), so the column has to be listed there
-        // or the attribute is silently absent and no image renders.
+        // The feed narrows its select(), so primary_answer_id has to be listed
+        // there or the relation never loads and no image renders.
         $this->get('/')
             ->assertStatus(200)
             ->assertSee($this->disk()->url($path), escape: false);
@@ -242,14 +217,11 @@ class AnswerImageUploadTest extends TestCase
     {
         $path = UploadedFile::fake()->image('hidden.jpg')->store('answers', 'public');
 
-        $q = Question::factory()->create([
-            'asked_by'          => User::factory()->create()->id,
-            'answer'            => 'An answer an admin removed.',
-            'answer_image_path' => $path,
-            'answer_deleted_at' => now(),
-            'answered_by'       => User::factory()->creator()->create()->id,
-            'answered_at'       => now(),
-        ]);
+        $q = Question::factory()
+            ->answeredBy(User::factory()->creator()->create(), 'An answer an admin removed.', ['image_path' => $path])
+            ->create(['asked_by' => User::factory()->create()->id]);
+        $q->removeAnswer($q->primaryAnswer);
+        $q->refresh();
 
         $this->assertNull($q->answerImageUrl());
         $this->get("/questions/{$q->id}")->assertDontSee($this->disk()->url($path), escape: false);

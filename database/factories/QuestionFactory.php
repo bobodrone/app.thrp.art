@@ -30,15 +30,38 @@ class QuestionFactory extends Factory
         ]);
     }
 
-    public function answeredBy(User $creator): static
+    /**
+     * Question with $creator's answer in the main slot.
+     */
+    public function answeredBy(User $creator, ?string $body = null, array $answer = []): static
     {
-        return $this->state(fn () => [
-            'status'       => QuestionStatus::Answered,
-            'claimed_by'   => $creator->id,
-            'answered_by'  => $creator->id,
-            'claimed_at'   => now()->subHour(),
-            'answered_at'  => now()->subMinutes(2),
-            'answer'       => "## Answer\n\nYes, the answer is **42**.\n\n- This is markdown\n- More context",
-        ]);
+        return $this->claimedBy($creator)
+            ->state(fn () => ['claimed_at' => now()->subHour()])
+            ->afterCreating(function (Question $question) use ($creator, $body, $answer) {
+                $question->promoteToPrimary(
+                    $question->answers()->create($answer + [
+                        'created_by'   => $creator->id,
+                        'body'         => $body ?? "## Answer\n\nYes, the answer is **42**.\n\n- This is markdown\n- More context",
+                        'anonymously'  => $creator->posts_anonymously,
+                        'published_at' => now()->subMinutes(2),
+                    ]),
+                );
+            });
+    }
+
+    /**
+     * Adds an alternative answer from another creator, on top of whatever the
+     * main answer is.
+     */
+    public function withAlternativeFrom(User $creator, ?string $body = null, array $answer = []): static
+    {
+        return $this->afterCreating(function (Question $question) use ($creator, $body, $answer) {
+            $question->answers()->create($answer + [
+                'created_by'   => $creator->id,
+                'body'         => $body ?? 'A different way to look at it: try the other approach instead.',
+                'anonymously'  => $creator->posts_anonymously,
+                'published_at' => now()->subMinute(),
+            ]);
+        });
     }
 }

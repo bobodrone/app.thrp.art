@@ -97,9 +97,9 @@ The answer involves **tea** and *patience*. Here is why.')
 
         $q->refresh();
         $this->assertSame(QuestionStatus::Answered->value, $q->status->value);
-        $this->assertNotNull($q->answer);
-        $this->assertSame($creator->id, $q->answered_by);
-        $this->assertNotNull($q->answered_at);
+        $this->assertTrue($q->hasVisibleAnswer());
+        $this->assertSame($creator->id, $q->primaryAnswer->created_by);
+        $this->assertNotNull($q->primaryAnswer->published_at);
         Queue::assertPushed(NotifyAskerOfAnswer::class);
     }
 
@@ -109,11 +109,11 @@ The answer involves **tea** and *patience*. Here is why.')
         $creator = User::factory()->creator()->create();
         $asker   = User::factory()->create();
         // A question whose previous answer was soft-deleted, then re-claimed.
-        $q = Question::factory()->claimedBy($creator)->create([
-            'asked_by'          => $asker->id,
-            'answer'            => 'Stale removed answer',
-            'answer_deleted_at' => now(),
-        ]);
+        $q = Question::factory()
+            ->answeredBy($creator, 'Stale removed answer')
+            ->create(['asked_by' => $asker->id]);
+        $q->removeAnswer($q->primaryAnswer);
+        $q->claimBy($creator);
 
         Livewire::actingAs($creator)
             ->test(\App\Livewire\CreatorQuestionDetail::class, ['question' => $q])
@@ -122,9 +122,10 @@ The answer involves **tea** and *patience*. Here is why.')
             ->assertHasNoErrors();
 
         $fresh = $q->fresh();
-        $this->assertNull($fresh->answer_deleted_at);
         $this->assertTrue($fresh->hasVisibleAnswer());
-        $this->assertSame('A brand new answer that is long enough', $fresh->answer);
+        $this->assertSame('A brand new answer that is long enough', $fresh->primaryAnswer->body);
+        // The creator's one slot was reused rather than a second row added.
+        $this->assertSame(1, $fresh->answers()->count());
     }
 
     public function test_non_claimer_cannot_answer(): void
@@ -142,7 +143,7 @@ The answer involves **tea** and *patience*. Here is why.')
 
         $q->refresh();
         $this->assertSame(QuestionStatus::Claimed->value, $q->status->value);
-        $this->assertNull($q->answer);
+        $this->assertFalse($q->hasVisibleAnswer());
     }
 
     public function test_short_answer_is_rejected(): void
@@ -178,23 +179,22 @@ The answer involves **tea** and *patience*. Here is why.')
         Queue::fake();
         $creator = User::factory()->creator()->create();
         $asker   = User::factory()->create();
-        $q = Question::factory()->answeredBy($creator)->create([
+        $q = Question::factory()->answeredBy($creator, 'The first version of the answer')->create([
             'asked_by' => $asker->id,
-            'answer'   => 'The first version of the answer',
         ]);
 
         Livewire::actingAs($creator)
             ->test(\App\Livewire\CreatorQuestionDetail::class, ['question' => $q])
             ->assertViewHas('canEditAnswer', true)
             ->call('startEditAnswer')
-            ->assertSet('editingAnswer', true)
+            ->assertSet('editingAnswerId', $q->primary_answer_id)
             ->assertSet('answerDraft', 'The first version of the answer')
             ->set('answerDraft', 'A revised and corrected answer text')
             ->call('updateAnswer')
             ->assertHasNoErrors()
-            ->assertSet('editingAnswer', false);
+            ->assertSet('editingAnswerId', null);
 
-        $this->assertSame('A revised and corrected answer text', $q->fresh()->answer);
+        $this->assertSame('A revised and corrected answer text', $q->fresh()->primaryAnswer->body);
         Queue::assertNotPushed(NotifyAskerOfAnswer::class);
     }
 
@@ -203,9 +203,8 @@ The answer involves **tea** and *patience*. Here is why.')
         $admin   = User::factory()->admin()->create();
         $creator = User::factory()->creator()->create();
         $asker   = User::factory()->create();
-        $q = Question::factory()->answeredBy($creator)->create([
+        $q = Question::factory()->answeredBy($creator, 'Creator wrote this answer')->create([
             'asked_by' => $asker->id,
-            'answer'   => 'Creator wrote this answer',
         ]);
 
         Livewire::actingAs($admin)
@@ -216,7 +215,7 @@ The answer involves **tea** and *patience*. Here is why.')
             ->call('updateAnswer')
             ->assertHasNoErrors();
 
-        $this->assertSame('Admin corrected the answer text', $q->fresh()->answer);
+        $this->assertSame('Admin corrected the answer text', $q->fresh()->primaryAnswer->body);
     }
 
     public function test_other_creator_cannot_edit_someone_elses_answer(): void
@@ -224,9 +223,8 @@ The answer involves **tea** and *patience*. Here is why.')
         $author   = User::factory()->creator()->create();
         $intruder = User::factory()->creator()->create();
         $asker    = User::factory()->create();
-        $q = Question::factory()->answeredBy($author)->create([
+        $q = Question::factory()->answeredBy($author, 'The protected original answer')->create([
             'asked_by' => $asker->id,
-            'answer'   => 'The protected original answer',
         ]);
 
         Livewire::actingAs($intruder)
@@ -236,16 +234,15 @@ The answer involves **tea** and *patience*. Here is why.')
             ->call('updateAnswer')
             ->assertHasErrors('answerDraft');
 
-        $this->assertSame('The protected original answer', $q->fresh()->answer);
+        $this->assertSame('The protected original answer', $q->fresh()->primaryAnswer->body);
     }
 
     public function test_edited_answer_must_meet_length_rules(): void
     {
         $creator = User::factory()->creator()->create();
         $asker   = User::factory()->create();
-        $q = Question::factory()->answeredBy($creator)->create([
+        $q = Question::factory()->answeredBy($creator, 'A perfectly valid original answer')->create([
             'asked_by' => $asker->id,
-            'answer'   => 'A perfectly valid original answer',
         ]);
 
         Livewire::actingAs($creator)
@@ -255,7 +252,7 @@ The answer involves **tea** and *patience*. Here is why.')
             ->call('updateAnswer')
             ->assertHasErrors('answerDraft');
 
-        $this->assertSame('A perfectly valid original answer', $q->fresh()->answer);
+        $this->assertSame('A perfectly valid original answer', $q->fresh()->primaryAnswer->body);
     }
 
     public function test_answered_history_lists_only_my_answered(): void

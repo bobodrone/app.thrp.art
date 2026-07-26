@@ -196,10 +196,9 @@ class AdminQuestionsTableTest extends TestCase
         $admin   = User::factory()->admin()->create();
         $asker   = User::factory()->create();
         $creator = User::factory()->creator()->create();
-        $q = Question::factory()->answeredBy($creator)->create([
+        $q = Question::factory()->answeredBy($creator, 'The original answer text')->create([
             'asked_by' => $asker->id,
             'content'  => 'A question here now',
-            'answer'   => 'The original answer text',
         ]);
 
         Livewire::actingAs($admin)
@@ -210,7 +209,7 @@ class AdminQuestionsTableTest extends TestCase
             ->call('saveEdit')
             ->assertHasNoErrors();
 
-        $this->assertSame('A corrected answer that is long enough', $q->fresh()->answer);
+        $this->assertSame('A corrected answer that is long enough', $q->fresh()->primaryAnswer->body);
     }
 
     public function test_deleting_answer_soft_deletes_and_reopens_question(): void
@@ -218,9 +217,8 @@ class AdminQuestionsTableTest extends TestCase
         $admin   = User::factory()->admin()->create();
         $asker   = User::factory()->create();
         $creator = User::factory()->creator()->create();
-        $q = Question::factory()->answeredBy($creator)->create([
+        $q = Question::factory()->answeredBy($creator, 'The original answer text')->create([
             'asked_by' => $asker->id,
-            'answer'   => 'The original answer text',
         ]);
 
         Livewire::actingAs($admin)
@@ -229,11 +227,13 @@ class AdminQuestionsTableTest extends TestCase
 
         $fresh = $q->fresh();
         $this->assertSame(QuestionStatus::Asked, $fresh->status);
-        $this->assertNotNull($fresh->answer_deleted_at);
+        $this->assertTrue($fresh->hasHiddenAnswer());
         $this->assertNull($fresh->claimed_by);
-        // Answer data is retained for recovery…
-        $this->assertSame('The original answer text', $fresh->answer);
-        $this->assertSame($creator->id, $fresh->answered_by);
+
+        // The row is retained for recovery…
+        $hidden = $fresh->primaryAnswer()->withTrashed()->first();
+        $this->assertSame('The original answer text', $hidden->body);
+        $this->assertSame($creator->id, $hidden->created_by);
         // …but is no longer considered a visible answer.
         $this->assertFalse($fresh->hasVisibleAnswer());
     }
@@ -242,11 +242,10 @@ class AdminQuestionsTableTest extends TestCase
     {
         $asker   = User::factory()->create();
         $creator = User::factory()->creator()->create();
-        $q = Question::factory()->answeredBy($creator)->create([
+        $q = Question::factory()->answeredBy($creator, 'Secret answer body here')->create([
             'asked_by' => $asker->id,
-            'answer'   => 'Secret answer body here',
         ]);
-        $q->update(['answer_deleted_at' => now()]);
+        $q->removeAnswer($q->primaryAnswer);
 
         $this->get(route('questions.show', $q))
             ->assertStatus(200)
@@ -317,16 +316,11 @@ class AdminQuestionsTableTest extends TestCase
         $admin   = User::factory()->admin()->create();
         $asker   = User::factory()->create();
         $creator = User::factory()->creator()->create();
-        $q = Question::factory()->answeredBy($creator)->create([
+        $q = Question::factory()->answeredBy($creator, 'The original answer text')->create([
             'asked_by' => $asker->id,
-            'answer'   => 'The original answer text',
         ]);
         // Simulate a soft-deleted answer (reopened question).
-        $q->update([
-            'status'            => QuestionStatus::Asked,
-            'answer_deleted_at' => now(),
-            'claimed_by'        => null,
-        ]);
+        $q->removeAnswer($q->primaryAnswer);
 
         Livewire::actingAs($admin)
             ->test(\App\Livewire\AdminQuestionsTable::class)
@@ -334,7 +328,7 @@ class AdminQuestionsTableTest extends TestCase
 
         $fresh = $q->fresh();
         $this->assertSame(QuestionStatus::Answered, $fresh->status);
-        $this->assertNull($fresh->answer_deleted_at);
+        $this->assertFalse($fresh->hasHiddenAnswer());
         $this->assertTrue($fresh->hasVisibleAnswer());
     }
 
@@ -344,12 +338,11 @@ class AdminQuestionsTableTest extends TestCase
         $asker   = User::factory()->create(['name' => 'Audrey']);
         $claimer = User::factory()->creator()->create(['name' => 'Carl']);
         $answerer = User::factory()->creator()->create(['name' => 'Clea']);
-        $q = Question::factory()->create(['asked_by' => $asker->id, 'content' => 'A detailed q', 'created_at' => now()]);
-        Question::where('id', $q->id)->update([
-            'status' => QuestionStatus::Answered->value,
-            'claimed_by' => $claimer->id,
-            'answered_by' => $answerer->id,
-        ]);
+        $q = Question::factory()
+            ->answeredBy($answerer)
+            ->create(['asked_by' => $asker->id, 'content' => 'A detailed q', 'created_at' => now()]);
+        // The claim and the answer belong to different creators here.
+        $q->update(['claimed_by' => $claimer->id]);
 
         $response = $this->actingAs($admin)->get('/admin/questions');
 

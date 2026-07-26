@@ -4,16 +4,23 @@ namespace App\Livewire;
 
 use App\Enums\QuestionStatus;
 use App\Jobs\NotifyAskerOfAnswer;
+use App\Livewire\Concerns\HandlesImageUploads;
+use App\Models\Answer;
 use App\Models\Question;
 use App\Services\MarkdownRenderer;
-use Illuminate\Support\Facades\Storage;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
 
 class CreatorQuestionDetail extends Component
 {
-    use WithFileUploads;
+    use HandlesImageUploads, WithFileUploads;
+
+    protected function uploadConfigKey(): string
+    {
+        return 'answer_image';
+    }
 
     public int $questionId;
     public string $answer = '';
@@ -21,7 +28,19 @@ class CreatorQuestionDetail extends Component
     /** Pending image for a brand-new answer. */
     public ?TemporaryUploadedFile $answerImage = null;
 
-    public bool $editingAnswer = false;
+    /** An alternative answer alongside someone else's main one. */
+    public string $alternative = '';
+
+    public ?TemporaryUploadedFile $alternativeImage = null;
+
+    /**
+     * Which answer the edit form is open on — the main one or one of the
+     * alternatives. Locked because it decides what gets overwritten; the
+     * ownership check in answerBeingEdited() is the real guard.
+     */
+    #[Locked]
+    public ?int $editingAnswerId = null;
+
     public string $answerDraft = '';
 
     /** Pending replacement image while editing an existing answer. */
@@ -38,19 +57,48 @@ class CreatorQuestionDetail extends Component
     public function render(MarkdownRenderer $markdown)
     {
         // Always fetch fresh from DB so status changes (claim/answer by others) are reflected
-        $question = Question::with(['asker:id,name', 'claimer:id,name', 'answerer:id,name'])
-            ->findOrFail($this->questionId);
+        $question = Question::with([
+            'asker:id,name',
+            'claimer:id,name',
+            'primaryAnswer.author:id,name,role',
+            'answers.author:id,name,role',
+        ])->findOrFail($this->questionId);
 
-        $renderedAnswer = $question->hasVisibleAnswer() ? $markdown->render($question->answer) : null;
+        $viewer = auth()->user();
+
+        $renderedAnswer = $question->hasVisibleAnswer()
+            ? $markdown->render($question->primaryAnswer->body)
+            : null;
+
+        // The image under the edit form belongs to whichever answer is open,
+        // not necessarily the main one.
+        $editing = $question->answers->firstWhere('id', $this->editingAnswerId);
 
         return view('livewire.creator.question-detail', [
             'question'       => $question,
             'renderedAnswer' => $renderedAnswer,
-            'canEditAnswer'  => $question->isAnswerEditableBy(auth()->user()),
+            'canEditAnswer'  => $question->isAnswerEditableBy($viewer),
+            'canAddAlternative' => $question->isAnswerableBy($viewer),
+            'canModerate'    => $canModerate = $question->isModeratableBy($viewer),
+            'otherAnswers'   => $question->otherAnswers()->map(fn (Answer $answer) => [
+                'answer'     => $answer,
+                'rendered'   => $markdown->render($answer->body),
+                'canEdit'    => $answer->isEditableBy($viewer),
+                'canPromote' => $question->isPromotableBy($viewer, $answer),
+            ]),
+            // Only moderators are shown what has been taken down.
+            'removedAnswers' => $canModerate
+                ? $question->answers()->onlyTrashed()->with('author:id,name,role')->get()
+                    ->map(fn (Answer $answer) => [
+                        'answer'   => $answer,
+                        'rendered' => $markdown->render($answer->body),
+                    ])
+                : collect(),
             'newImagePreview'  => $this->previewUrl($this->answerImage),
+            'alternativeImagePreview' => $this->previewUrl($this->alternativeImage),
             'editImagePreview' => $this->previewUrl(
                 $this->answerImageDraft,
-                $this->removeAnswerImage ? null : $question->answerImageUrl(),
+                $this->removeAnswerImage ? null : $editing?->imageUrl(),
             ),
         ])
         ->layout('layouts.app')
@@ -88,56 +136,6 @@ class CreatorQuestionDetail extends Component
         $this->redirect(route('creator.dashboard'));
     }
 
-    /**
-     * What the upload widget should display: the staged upload if there is one,
-     * otherwise the fallback (usually the already-saved image).
-     *
-     * Livewire cannot build a preview URL for every format it accepts — HEIC has
-     * no entry in livewire.temporary_file_upload.preview_mimes — so a failure
-     * here just means "no server-side preview", not a broken upload.
-     */
-    protected function previewUrl(?TemporaryUploadedFile $file, ?string $fallback = null): ?string
-    {
-        if ($file === null) {
-            return $fallback;
-        }
-
-        try {
-            return $file->temporaryUrl();
-        } catch (\Throwable) {
-            return null;
-        }
-    }
-
-    /**
-     * Validation rules for an uploaded image — all limits come from
-     * config/uploads.php, which reads them from .env.
-     */
-    protected function imageRules(string $field): array
-    {
-        $config = config('uploads.answer_image');
-
-        return [$field => [
-            'nullable',
-            'file',
-            'extensions:'.implode(',', $config['extensions']),
-            'mimetypes:'.implode(',', $config['mime_types']),
-            'max:'.$config['max_kb'],
-        ]];
-    }
-
-    protected function imageMessages(string $field): array
-    {
-        $config = config('uploads.answer_image');
-
-        return [
-            "{$field}.extensions" => 'Image must be a '.implode(', ', $config['extensions']).' file.',
-            "{$field}.mimetypes"  => 'That file is not a valid image.',
-            "{$field}.max"        => 'Image must be smaller than '.round($config['max_kb'] / 1024, 1).' MB.',
-            "{$field}.uploaded"   => 'Upload failed — the file may be larger than the server allows.',
-        ];
-    }
-
     /** Validate as soon as a file is picked, so mistakes surface immediately. */
     public function updatedAnswerImage(): void
     {
@@ -152,10 +150,21 @@ class CreatorQuestionDetail extends Component
         $this->validateOnly('answerImageDraft', $this->imageRules('answerImageDraft'), $this->imageMessages('answerImageDraft'));
     }
 
+    public function updatedAlternativeImage(): void
+    {
+        $this->validateOnly('alternativeImage', $this->imageRules('alternativeImage'), $this->imageMessages('alternativeImage'));
+    }
+
     public function clearAnswerImage(): void
     {
         $this->reset('answerImage');
         $this->resetErrorBag('answerImage');
+    }
+
+    public function clearAlternativeImage(): void
+    {
+        $this->reset('alternativeImage');
+        $this->resetErrorBag('alternativeImage');
     }
 
     /**
@@ -170,22 +179,6 @@ class CreatorQuestionDetail extends Component
         $this->removeAnswerImage = true;
     }
 
-    protected function storeImage(TemporaryUploadedFile $file): string
-    {
-        // store() picks a random filename — never trust the client's.
-        return $file->store(
-            config('uploads.answer_image.directory'),
-            config('uploads.answer_image.disk'),
-        );
-    }
-
-    protected function deleteImage(?string $path): void
-    {
-        if ($path !== null) {
-            Storage::disk(config('uploads.answer_image.disk'))->delete($path);
-        }
-    }
-
     public function submitAnswer(): void
     {
         $validated = $this->validate([
@@ -197,22 +190,17 @@ class CreatorQuestionDetail extends Component
 
         $imagePath = $this->answerImage ? $this->storeImage($this->answerImage) : null;
 
-        // A reopened question may still carry the image of its removed answer.
-        $previousPath = Question::whereKey($this->questionId)->value('answer_image_path');
+        $question = Question::findOrFail($this->questionId);
 
-        $updated = Question::where('id', $this->questionId)
-            ->where('status', QuestionStatus::Claimed)
-            ->where('claimed_by', auth()->id())
-            ->update([
-                'status'            => QuestionStatus::Answered,
-                'answer'            => $validated['answer'],
-                'answer_image_path' => $imagePath,
-                'answered_by'       => auth()->id(),
-                'answered_at'       => now(),
-                'answer_deleted_at' => null,
-            ]);
+        // A reopened question may still carry the image of this creator's
+        // removed answer, whose row is about to be reused.
+        $previousPath = $question->answers()->withTrashed()
+            ->writtenBy(auth()->id())
+            ->value('image_path');
 
-        if ($updated === 0) {
+        $answer = $question->publishPrimaryAnswerFrom(auth()->user(), $validated['answer'], $imagePath);
+
+        if ($answer === null) {
             $this->deleteImage($imagePath);
             $this->addError('answer', 'Could not submit — question may no longer be claimed by you.');
             return;
@@ -220,37 +208,173 @@ class CreatorQuestionDetail extends Component
 
         $this->deleteImage($previousPath);
 
-        NotifyAskerOfAnswer::dispatch(Question::find($this->questionId));
+        NotifyAskerOfAnswer::dispatch($question);
 
         $this->redirect(route('creator.questions.show', $this->questionId));
     }
 
-    public function startEditAnswer(): void
+    /**
+     * Publish an alternative alongside the main answer. No claim is involved —
+     * the model decides whether this creator is allowed one.
+     */
+    public function submitAlternative(): void
     {
+        $validated = $this->validate([
+            'alternative' => ['required', 'string', 'between:10,10000'],
+        ] + $this->imageRules('alternativeImage'), [
+            'alternative.required' => 'Answer text is required.',
+            'alternative.between'  => 'Answer must be 10–10 000 characters.',
+        ] + $this->imageMessages('alternativeImage'));
+
+        $imagePath = $this->alternativeImage ? $this->storeImage($this->alternativeImage) : null;
+
         $question = Question::findOrFail($this->questionId);
 
-        if (! $question->isAnswerEditableBy(auth()->user())) {
+        // An answer of theirs that an admin removed still holds their slot, and
+        // adding a new one reuses that row — so its image needs cleaning up.
+        $previousPath = $question->answers()->withTrashed()
+            ->writtenBy(auth()->id())
+            ->value('image_path');
+
+        $answer = $question->addAlternativeAnswerFrom(auth()->user(), $validated['alternative'], $imagePath);
+
+        if ($answer === null) {
+            $this->deleteImage($imagePath);
+            $this->addError('alternative', 'Could not add your answer — you may already have one on this question.');
             return;
         }
 
-        $this->answerDraft   = $question->answer ?? '';
-        $this->editingAnswer = true;
+        $this->deleteImage($previousPath);
+
+        NotifyAskerOfAnswer::dispatch($question);
+
+        $this->redirect(route('creator.questions.show', $this->questionId));
+    }
+
+    /**
+     * Moderation: hide an answer, main or alternative. Removing the main one
+     * reopens the question; the row survives either way and can be restored
+     * from the same page.
+     */
+    public function removeAnswer(int $answerId): void
+    {
+        $question = Question::with('answers')->findOrFail($this->questionId);
+        $answer   = $question->answers->firstWhere('id', $answerId);
+
+        if ($answer === null || ! $question->isModeratableBy(auth()->user())) {
+            $this->addError('moderate', 'You are not allowed to remove this answer.');
+            return;
+        }
+
+        $wasPrimary = $question->primary_answer_id === $answer->id;
+
+        $question->removeAnswer($answer);
+
+        session()->flash('moderation-ok', $wasPrimary
+            ? 'Main answer removed — the question is open for claiming again.'
+            : 'Answer removed.');
+
+        $this->redirect(route('creator.questions.show', $this->questionId));
+    }
+
+    /**
+     * Moderation: put a hidden answer back. If the main slot was refilled while
+     * it was down, it returns as an alternative.
+     */
+    public function restoreAnswer(int $answerId): void
+    {
+        $question = Question::findOrFail($this->questionId);
+        $answer   = $question->answers()->onlyTrashed()->find($answerId);
+
+        if ($answer === null || ! $question->isModeratableBy(auth()->user())) {
+            $this->addError('moderate', 'You are not allowed to restore this answer.');
+            return;
+        }
+
+        $question->restoreAnswer($answer);
+
+        session()->flash('moderation-ok', 'Answer restored.');
+
+        $this->redirect(route('creator.questions.show', $this->questionId));
+    }
+
+    /**
+     * Moderation: move an alternative into the main slot. The answer that was
+     * there becomes an alternative rather than disappearing, so nothing is lost
+     * if an admin promotes the wrong one.
+     */
+    public function promoteAnswer(int $answerId): void
+    {
+        $question = Question::with('answers')->findOrFail($this->questionId);
+
+        // Reading from the loaded relation keeps hidden answers out of reach:
+        // promoting one would put a soft-deleted answer in the main slot.
+        $answer = $question->answers->firstWhere('id', $answerId);
+
+        if ($answer === null || ! $question->isPromotableBy(auth()->user(), $answer)) {
+            $this->addError('promote', 'You are not allowed to change the main answer.');
+            return;
+        }
+
+        $question->promoteToPrimary($answer);
+
+        session()->flash('moderation-ok', 'Main answer updated.');
+
+        $this->redirect(route('creator.questions.show', $this->questionId));
+    }
+
+    /**
+     * Open the edit form on one answer, defaulting to the main one.
+     */
+    public function startEditAnswer(?int $answerId = null): void
+    {
+        $question = Question::with('answers')->findOrFail($this->questionId);
+
+        $answer = $answerId === null
+            ? $question->primaryAnswer
+            : $question->answers->firstWhere('id', $answerId);
+
+        if ($answer === null || ! $answer->isEditableBy(auth()->user())) {
+            return;
+        }
+
+        $this->answerDraft     = $answer->body;
+        $this->editingAnswerId = $answer->id;
         $this->reset('answerImageDraft', 'removeAnswerImage');
         $this->resetErrorBag();
     }
 
     public function cancelEditAnswer(): void
     {
-        $this->editingAnswer = false;
-        $this->reset('answerDraft', 'answerImageDraft', 'removeAnswerImage');
+        $this->reset('editingAnswerId', 'answerDraft', 'answerImageDraft', 'removeAnswerImage');
         $this->resetErrorBag();
+    }
+
+    /**
+     * The answer the edit form is open on, or null when there is none this
+     * viewer may write to. Re-checked on every save rather than trusted from
+     * the request.
+     */
+    protected function answerBeingEdited(): ?Answer
+    {
+        if ($this->editingAnswerId === null) {
+            return null;
+        }
+
+        $answer = Answer::find($this->editingAnswerId);
+
+        if ($answer === null || $answer->question_id !== $this->questionId) {
+            return null;
+        }
+
+        return $answer->isEditableBy(auth()->user()) ? $answer : null;
     }
 
     public function updateAnswer(): void
     {
-        $question = Question::findOrFail($this->questionId);
+        $answer = $this->answerBeingEdited();
 
-        if (! $question->isAnswerEditableBy(auth()->user())) {
+        if ($answer === null) {
             $this->addError('answerDraft', 'You are not allowed to edit this answer.');
             return;
         }
@@ -262,24 +386,24 @@ class CreatorQuestionDetail extends Component
             'answerDraft.between'  => 'Answer must be 10–10 000 characters.',
         ] + $this->imageMessages('answerImageDraft'));
 
-        $previousPath = $question->answer_image_path;
+        $previousPath = $answer->image_path;
         $imagePath    = match (true) {
             (bool) $this->answerImageDraft => $this->storeImage($this->answerImageDraft),
             $this->removeAnswerImage       => null,
             default                        => $previousPath,
         };
 
-        // Edit in place — no re-notification to the asker.
-        Question::whereKey($this->questionId)->update([
-            'answer'            => $validated['answerDraft'],
-            'answer_image_path' => $imagePath,
+        // Edit in place — no re-notification to the asker, and published_at
+        // stays put so the answer keeps its original timestamp.
+        $answer->update([
+            'body'       => $validated['answerDraft'],
+            'image_path' => $imagePath,
         ]);
 
         if ($previousPath !== $imagePath) {
             $this->deleteImage($previousPath);
         }
 
-        $this->editingAnswer = false;
-        $this->reset('answerDraft', 'answerImageDraft', 'removeAnswerImage');
+        $this->reset('editingAnswerId', 'answerDraft', 'answerImageDraft', 'removeAnswerImage');
     }
 }

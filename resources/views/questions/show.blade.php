@@ -49,21 +49,43 @@
                             <x-flower size="20" petalColor="#FFD600" centerColor="#1A5C38" dotColor="#FFD600" />
                             <h2 class="font-body text-xs font-semibold uppercase tracking-wider text-leaf-600">Answer</h2>
                         </div>
-                        @if ($imageUrl = $question->answerImageUrl())
-                            <x-answer-image :url="$imageUrl" />
-                        @endif
-                        <div class="prose prose-sm max-w-none font-body prose-headings:font-display prose-a:text-leaf-600">
-                            {!! $renderedAnswer !!}
-                        </div>
-                        @if ($question->answerer)
-                            <p class="mt-6 font-body text-xs text-soil-400">
-                                Answered by <span class="font-medium text-soil-600">{{ $question->answerer->name }}</span>
-                                @if ($question->answered_at)&nbsp;· {{ $question->answered_at->diffForHumans() }}@endif
-                            </p>
-                        @endif
+                        <x-answer-body
+                            :answer="$question->primaryAnswer"
+                            :rendered="$renderedAnswer"
+                            :viewer="auth()->user()"
+                        />
                     </div>
                 @endif
             </article>
+
+            {{-- Alternative answers from other creators, oldest first. --}}
+            @if ($otherAnswers->isNotEmpty())
+                <section class="mt-8">
+                    <h2 class="mb-4 font-body text-xs font-semibold uppercase tracking-wider text-soil-400">
+                        {{ $otherAnswers->count() }} {{ \Illuminate\Support\Str::plural('other answer', $otherAnswers->count()) }} from the community
+                    </h2>
+
+                    <div class="space-y-4">
+                        @foreach ($otherAnswers as $row)
+                            <article class="rounded-2xl border border-leaf-200 bg-white p-6 shadow-sm">
+                                <x-answer-body
+                                    :answer="$row['answer']"
+                                    :rendered="$row['rendered']"
+                                    :viewer="auth()->user()"
+                                />
+                            </article>
+                        @endforeach
+                    </div>
+                </section>
+            @endif
+
+            {{-- Creators who have not answered yet get a way in. --}}
+            @if ($question->isAnswerableBy(auth()->user()))
+                <div class="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-leaf-200 bg-leaf-100 px-4 py-3">
+                    <p class="font-body text-sm text-leaf-700">Have a different take on this one?</p>
+                    <x-question-action :question="$question" size="md" />
+                </div>
+            @endif
         </div>
     </div>
 </x-app-layout>

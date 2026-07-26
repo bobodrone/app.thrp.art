@@ -13,6 +13,16 @@
     @error('answer')
         <p class="mb-4 rounded-xl border border-poppy-100 bg-poppy-100 px-4 py-3 font-body text-sm text-poppy-600">{{ $message }}</p>
     @enderror
+    @error('promote')
+        <p class="mb-4 rounded-xl border border-poppy-100 bg-poppy-100 px-4 py-3 font-body text-sm text-poppy-600">{{ $message }}</p>
+    @enderror
+    @error('moderate')
+        <p class="mb-4 rounded-xl border border-poppy-100 bg-poppy-100 px-4 py-3 font-body text-sm text-poppy-600">{{ $message }}</p>
+    @enderror
+
+    @if (session('moderation-ok'))
+        <p class="mb-4 rounded-xl border border-leaf-200 bg-leaf-100 px-4 py-3 font-body text-sm text-leaf-700">{{ session('moderation-ok') }}</p>
+    @endif
 
     <div class="mb-6 flex items-center justify-between">
         <x-status-badge :status="$question->status" />
@@ -87,51 +97,157 @@
     {{-- State D: answered --}}
     @elseif ($isAnswered && $renderedAnswer)
         <div class="mt-6 rounded-2xl border border-leaf-200 bg-white p-8 shadow-sm">
-            @if ($editingAnswer)
-                <p class="mb-4 font-body text-sm font-medium text-soil-700">Edit answer</p>
-
-                <div class="space-y-4" wire:key="edit-answer-{{ $question->id }}">
-                    <x-image-upload
-                        wire-model="answerImageDraft"
-                        clear-action="clearAnswerImageDraft"
-                        :current-url="$editImagePreview"
-                    />
-                    <x-markdown-editor wire-model="answerDraft" :initial="$answerDraft" />
-                    @error('answerDraft') <p class="font-body text-xs text-poppy-600">{{ $message }}</p> @enderror
-
-                    <div class="flex justify-end gap-3">
-                        <button type="button" wire:click="cancelEditAnswer"
-                            class="rounded-xl border border-soil-300 px-5 py-2 font-body text-sm text-soil-600 hover:bg-soil-50">
-                            Cancel
-                        </button>
-                        <button type="button" wire:click="updateAnswer"
-                            class="rounded-xl bg-leaf-600 px-6 py-2 font-body text-sm font-semibold text-white hover:bg-leaf-500">
-                            Save changes
-                        </button>
-                    </div>
+            @if ($editingAnswerId === $question->primary_answer_id)
+                <div wire:key="edit-answer-{{ $question->primary_answer_id }}">
+                    <x-answer-editor :draft="$answerDraft" :image-preview="$editImagePreview" />
                 </div>
             @else
-                <div class="mb-4 flex items-center justify-between gap-4">
+                <div class="mb-4 flex flex-wrap items-center justify-between gap-4">
                     <p class="font-body text-xs font-medium uppercase tracking-wide text-soil-400">Answer</p>
-                    @if ($canEditAnswer)
-                        <button type="button" wire:click="startEditAnswer"
-                            class="font-body text-sm font-semibold text-leaf-600 hover:underline">
-                            Edit answer
-                        </button>
-                    @endif
+                    <div class="flex flex-wrap items-center gap-4">
+                        @if ($canEditAnswer)
+                            <button type="button" wire:click="startEditAnswer"
+                                class="font-body text-sm font-semibold text-leaf-600 hover:underline">
+                                Edit answer
+                            </button>
+                        @endif
+                        @if ($canModerate)
+                            <button type="button" wire:click="removeAnswer({{ $question->primary_answer_id }})"
+                                wire:confirm="Remove the main answer? The question reopens for claiming, and the answer can be restored from this page."
+                                class="font-body text-sm font-semibold text-poppy-600 hover:underline">
+                                Remove
+                            </button>
+                        @endif
+                    </div>
                 </div>
-                @if ($imageUrl = $question->answerImageUrl())
-                    <x-answer-image :url="$imageUrl" />
-                @endif
-                <div class="prose prose-sm max-w-none font-body prose-headings:font-display prose-a:text-leaf-600">
-                    {!! $renderedAnswer !!}
-                </div>
-                @if ($question->answerer && $question->answered_at)
-                    <p class="mt-6 font-body text-xs text-soil-400">
-                        Answered by {{ $question->answerer->name }} · {{ $question->answered_at->diffForHumans() }}
-                    </p>
+                <x-answer-body
+                    :answer="$question->primaryAnswer"
+                    :rendered="$renderedAnswer"
+                    :viewer="auth()->user()"
+                />
+                @if ($question->primaryAnswer->anonymously)
+                    <p class="mt-1 font-body text-xs text-soil-400">Posted anonymously</p>
                 @endif
             @endif
+        </div>
+    @endif
+
+    {{-- Alternative answers from other creators --}}
+    @if ($otherAnswers->isNotEmpty())
+        <h2 class="mb-3 mt-8 font-body text-xs font-semibold uppercase tracking-wider text-soil-400">
+            @if ($question->hasVisibleAnswer())
+                {{ $otherAnswers->count() }} {{ \Illuminate\Support\Str::plural('other answer', $otherAnswers->count()) }}
+            @else
+                {{-- No main answer to be "other" than — it was removed, or never claimed. --}}
+                {{ $otherAnswers->count() }} {{ \Illuminate\Support\Str::plural('answer', $otherAnswers->count()) }}
+            @endif
+        </h2>
+
+        <div class="space-y-4">
+            @foreach ($otherAnswers as $row)
+                <div class="rounded-2xl border border-leaf-200 bg-white p-6 shadow-sm"
+                     wire:key="answer-{{ $row['answer']->id }}">
+                    @if ($editingAnswerId === $row['answer']->id)
+                        <x-answer-editor
+                            :draft="$answerDraft"
+                            :image-preview="$editImagePreview"
+                            heading="Edit your answer"
+                        />
+                    @else
+                        @if ($row['canEdit'] || $row['canPromote'] || $canModerate)
+                            <div class="mb-3 flex flex-wrap items-center justify-end gap-4">
+                                @if ($row['canPromote'])
+                                    <button type="button"
+                                        wire:click="promoteAnswer({{ $row['answer']->id }})"
+                                        wire:confirm="Make this the main answer? The current one becomes an alternative."
+                                        class="font-body text-sm font-semibold text-sun-700 hover:underline">
+                                        Make main answer
+                                    </button>
+                                @endif
+                                @if ($row['canEdit'])
+                                    <button type="button" wire:click="startEditAnswer({{ $row['answer']->id }})"
+                                        class="font-body text-sm font-semibold text-leaf-600 hover:underline">
+                                        Edit answer
+                                    </button>
+                                @endif
+                                @if ($canModerate)
+                                    <button type="button" wire:click="removeAnswer({{ $row['answer']->id }})"
+                                        wire:confirm="Remove this answer? It can be restored from this page."
+                                        class="font-body text-sm font-semibold text-poppy-600 hover:underline">
+                                        Remove
+                                    </button>
+                                @endif
+                            </div>
+                        @endif
+                        <x-answer-body
+                            :answer="$row['answer']"
+                            :rendered="$row['rendered']"
+                            :viewer="auth()->user()"
+                        />
+                    @endif
+                </div>
+            @endforeach
+        </div>
+    @endif
+
+    {{-- Removed answers, admins only — nothing here is public --}}
+    @if ($removedAnswers->isNotEmpty())
+        <h2 class="mb-3 mt-8 font-body text-xs font-semibold uppercase tracking-wider text-soil-400">
+            {{ $removedAnswers->count() }} removed {{ \Illuminate\Support\Str::plural('answer', $removedAnswers->count()) }}
+        </h2>
+
+        <div class="space-y-4">
+            @foreach ($removedAnswers as $row)
+                <div class="rounded-2xl border border-dashed border-soil-300 bg-soil-50 p-6"
+                     wire:key="removed-{{ $row['answer']->id }}">
+                    <div class="mb-3 flex flex-wrap items-center justify-between gap-4">
+                        <span class="rounded-full bg-soil-100 px-2 py-0.5 font-body text-xs text-soil-500">
+                            Hidden from everyone
+                        </span>
+                        <button type="button" wire:click="restoreAnswer({{ $row['answer']->id }})"
+                            class="font-body text-sm font-semibold text-leaf-600 hover:underline">
+                            Restore
+                        </button>
+                    </div>
+                    <div class="opacity-60">
+                        <x-answer-body
+                            :answer="$row['answer']"
+                            :rendered="$row['rendered']"
+                            :viewer="auth()->user()"
+                        />
+                    </div>
+                </div>
+            @endforeach
+        </div>
+    @endif
+
+    {{-- Any creator without an answer here may add one alongside the main one --}}
+    @if ($canAddAlternative)
+        <div class="mt-8 rounded-2xl border border-leaf-200 bg-white p-8 shadow-sm">
+            <p class="mb-1 font-body text-sm font-medium text-soil-700">Add your answer</p>
+            <p class="mb-4 font-body text-xs text-soil-400">
+                This question already has an answer. Yours will be shown alongside it.
+            </p>
+
+            @error('alternative')
+                <p class="mb-4 rounded-xl border border-poppy-100 bg-poppy-100 px-4 py-3 font-body text-sm text-poppy-600">{{ $message }}</p>
+            @enderror
+
+            <div class="space-y-4">
+                <x-image-upload
+                    wire-model="alternativeImage"
+                    clear-action="clearAlternativeImage"
+                    :current-url="$alternativeImagePreview"
+                />
+                <x-markdown-editor wire-model="alternative" :initial="$alternative" />
+                <div class="flex justify-end">
+                    <button type="button"
+                        wire:click="submitAlternative"
+                        class="rounded-xl bg-leaf-600 px-6 py-2 font-body text-sm font-semibold text-white hover:bg-leaf-500">
+                        Post my answer
+                    </button>
+                </div>
+            </div>
         </div>
     @endif
 </div>

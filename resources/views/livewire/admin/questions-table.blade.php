@@ -93,14 +93,20 @@
                                     <x-status-badge :status="$q->status" />
                                     @if ($isTrashed)
                                         <span class="rounded-full bg-poppy-100 px-2 py-0.5 font-body text-xs font-medium text-poppy-600">Deleted</span>
-                                    @elseif ($q->answer_deleted_at)
+                                    @elseif ($q->hasHiddenAnswer())
                                         <span class="rounded-full bg-soil-100 px-2 py-0.5 font-body text-xs text-soil-500">Answer removed</span>
                                     @endif
                                 </div>
                             </td>
                             <td class="px-4 py-3 text-soil-600">{{ $q->asker?->name ?? '—' }}</td>
                             <td class="px-4 py-3 text-soil-600">{{ $q->claimer?->name ?? '—' }}</td>
-                            <td class="px-4 py-3 text-soil-600">{{ $q->answer_deleted_at ? '—' : ($q->answerer?->name ?? '—') }}</td>
+                            <td class="px-4 py-3 text-soil-600">
+                                @if (! $q->primaryAnswer?->author)
+                                    —
+                                @else
+                                    <x-answerer-name :answer="$q->primaryAnswer" :viewer="auth()->user()" />
+                                @endif
+                            </td>
                             <td class="px-4 py-3 tabular-nums text-soil-400">{{ format_date($q->created_at) }}</td>
                             <td class="whitespace-nowrap px-4 py-3">
                                 <div class="flex items-center gap-3">
@@ -114,7 +120,12 @@
                                         <a href="{{ route('questions.show', $q) }}" class="font-semibold text-leaf-600 hover:underline">View</a>
                                         <button type="button" wire:click="edit({{ $q->id }})"
                                             class="font-semibold text-soil-500 hover:text-soil-700 hover:underline">Edit</button>
-                                        @if ($q->answer_deleted_at)
+                                        @if ($q->answers_count > 1)
+                                            {{-- Where every answer is listed, and the main one can be swapped. --}}
+                                            <a href="{{ route('creator.questions.show', $q) }}"
+                                                class="font-semibold text-soil-500 hover:text-soil-700 hover:underline">Answers ({{ $q->answers_count }})</a>
+                                        @endif
+                                        @if ($q->hasHiddenAnswer())
                                             <button type="button" wire:click="restoreAnswer({{ $q->id }})"
                                                 class="font-semibold text-leaf-600 hover:underline">Restore answer</button>
                                         @endif

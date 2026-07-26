@@ -16,14 +16,21 @@ class HomeController extends Controller
     {
         Livewire::forceAssetInjection();
 
-        $questions = Question::with(['asker:id,name', 'answerer:id,name'])
-            ->select(['id', 'content', 'status', 'answer', 'answer_image_path', 'asked_by', 'claimed_by', 'answered_by', 'created_at', 'answered_at', 'answer_deleted_at'])
+        // role comes along because the answerer credit links to public profiles.
+        // The bare `answers` load is what lets each card count the answers and
+        // work out whether this viewer may add one, without a query per card.
+        $questions = Question::with([
+            'asker:id,name',
+            'primaryAnswer.author:id,name,role',
+            'answers:id,question_id,created_by',
+        ])
+            ->select(['id', 'content', 'status', 'asked_by', 'claimed_by', 'primary_answer_id', 'created_at'])
             ->latest('created_at')
             ->limit(20)
             ->get()
             ->map(fn (Question $q) => [
                 'question'        => $q,
-                'renderedAnswer' => $q->hasVisibleAnswer() ? $this->markdown->render($q->answer) : null,
+                'renderedAnswer' => $q->hasVisibleAnswer() ? $this->markdown->render($q->primaryAnswer->body) : null,
             ]);
 
         return view('home', [
