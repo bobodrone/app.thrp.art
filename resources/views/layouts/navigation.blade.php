@@ -6,7 +6,7 @@
     $navLinks = [];
     if ($user) {
         if (in_array($user->role->value, [UserRole::Creator->value, UserRole::Admin->value])) {
-            $navLinks[] = ['label' => 'Creator', 'url' => route('creator.dashboard')];
+            $navLinks[] = ['label' => 'Creator Dashboard', 'url' => route('creator.dashboard')];
         }
         if ($user->role === UserRole::Admin) {
             $navLinks[] = ['label' => 'Questions', 'url' => route('admin.questions')];
