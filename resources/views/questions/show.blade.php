@@ -35,7 +35,7 @@
                             @if ($question->isAwaitingAnswerFrom(auth()->user()))
                                 You claimed this question — pick up where you left off.
                             @else
-                                Being answered by <strong>{{ $question->claimer->name }}</strong>…
+                                Being answered by <strong>{{ $question->claimerNameFor(auth()->user()) }}</strong>…
                             @endif
                         </p>
                         {{-- Only the claimer gets a link back; for everyone else this renders nothing. --}}

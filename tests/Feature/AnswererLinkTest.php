@@ -96,6 +96,62 @@ class AnswererLinkTest extends TestCase
             ->assertSee(route('creators.show', $creator), escape: false);
     }
 
+    public function test_claim_banner_hides_an_anonymous_creators_name(): void
+    {
+        $creator = User::factory()->creator()->create([
+            'name' => 'Ada Gardener', 'posts_anonymously' => true,
+        ]);
+        $q = Question::factory()->claimedBy($creator)->create();
+
+        // The window between claiming and publishing is public too.
+        $this->get(route('questions.show', $q))
+            ->assertOk()
+            ->assertSee(Answer::ANONYMOUS_AUTHOR)
+            ->assertDontSee('Ada Gardener');
+    }
+
+    public function test_claim_banner_still_names_a_creator_who_is_not_anonymous(): void
+    {
+        $creator = User::factory()->creator()->create(['name' => 'Ada Gardener']);
+        $q       = Question::factory()->claimedBy($creator)->create();
+
+        $this->get(route('questions.show', $q))
+            ->assertOk()
+            ->assertSee('Ada Gardener');
+    }
+
+    public function test_claim_banner_shows_the_real_name_to_admins(): void
+    {
+        $creator = User::factory()->creator()->create([
+            'name' => 'Ada Gardener', 'posts_anonymously' => true,
+        ]);
+        $q = Question::factory()->claimedBy($creator)->create();
+
+        $this->actingAs(User::factory()->admin()->create())
+            ->get(route('questions.show', $q))
+            ->assertOk()
+            ->assertSee('Ada Gardener');
+    }
+
+    public function test_an_anonymous_alternative_answer_is_marked_on_the_creator_page(): void
+    {
+        $main = User::factory()->creator()->create();
+        $alt  = User::factory()->creator()->create([
+            'name' => 'Ada Gardener', 'posts_anonymously' => true,
+        ]);
+
+        $q = Question::factory()
+            ->answeredBy($main)
+            ->withAlternativeFrom($alt)
+            ->create();
+
+        // The creator who wrote it needs to see that it went out anonymously.
+        Livewire::actingAs($alt)
+            ->test(CreatorQuestionDetail::class, ['question' => $q])
+            ->assertSee(Answer::ANONYMOUS_AUTHOR)
+            ->assertSee('Posted anonymously');
+    }
+
     public function test_admin_questions_table_links_the_answerer(): void
     {
         $creator = User::factory()->creator()->create(['name' => 'Ada Gardener']);

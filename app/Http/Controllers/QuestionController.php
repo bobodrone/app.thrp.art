@@ -19,7 +19,8 @@ class QuestionController extends Controller
     {
         $question->load([
             'asker:id,name',
-            'claimer:id,name',
+            // posts_anonymously decides how the claimer is credited while they write.
+            'claimer:id,name,posts_anonymously',
             'primaryAnswer.author:id,name,role',
             // role comes along because each credit links to a public profile.
             'answers.author:id,name,role',

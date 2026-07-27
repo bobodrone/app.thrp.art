@@ -184,6 +184,9 @@
                             :rendered="$row['rendered']"
                             :viewer="auth()->user()"
                         />
+                        @if ($row['answer']->anonymously)
+                            <p class="mt-1 font-body text-xs text-soil-400">Posted anonymously</p>
+                        @endif
                     @endif
                 </div>
             @endforeach

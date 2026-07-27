@@ -238,8 +238,10 @@ class Question extends Model
         $answer->forceFill([
             'body'         => $body,
             'image_path'   => $imagePath,
-            // Snapshotted, so a later change of preference cannot unmask (or
-            // retroactively anonymise) an answer already published.
+            // Snapshotted at publication, so a later change of preference cannot
+            // unmask (or retroactively anonymise) an answer already published.
+            // Re-publishing into a reused row is a fresh publication and does
+            // take the current preference — the only way the flag ever moves.
             'anonymously'  => $author->posts_anonymously,
             'published_at' => now(),
             'deleted_at'   => null,
@@ -276,6 +278,28 @@ class Question extends Model
     public function answererNameFor(?User $viewer): ?string
     {
         return $this->primaryAnswer?->authorNameFor($viewer);
+    }
+
+    /**
+     * How the creator who claimed this question should be credited while they
+     * write, or null when nobody holds it. There is no answer to snapshot yet,
+     * so the preference is read live — naming them here would unmask an
+     * anonymous creator for the whole window between claiming and publishing.
+     *
+     * Needs `posts_anonymously` on the eager load (`claimer:id,name,posts_anonymously`):
+     * a partially loaded User reports null and reads as "not anonymous".
+     */
+    public function claimerNameFor(?User $viewer): ?string
+    {
+        if ($this->claimer === null) {
+            return null;
+        }
+
+        if ($this->claimer->posts_anonymously && $viewer?->role !== UserRole::Admin) {
+            return Answer::ANONYMOUS_AUTHOR;
+        }
+
+        return $this->claimer->name;
     }
 
     /**
