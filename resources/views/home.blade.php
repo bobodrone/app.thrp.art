@@ -81,4 +81,14 @@
             @endif
         </div>
     </section>
+    <section class="bg-gray-800 px-5 py-4">
+        <div class="mx-auto max-w-6xl">
+          <p>
+            <a
+              href="/about"
+              class="text-white underline-offset-4 underline" target="_blank"
+            >Credits and legal information</a>
+          </p>
+        </div>
+    </section>
 </x-app-layout>

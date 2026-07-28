@@ -3,6 +3,7 @@
 use App\Http\Controllers\AdminBootstrapController;
 use App\Http\Controllers\CreatorAnsweredController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\AboutPageController;
 use App\Http\Controllers\MyQuestionsController;
 use App\Http\Controllers\QuestionClaimController;
 use App\Http\Controllers\PublicCreatorController;
@@ -28,6 +29,9 @@ Route::get('/cron/run', function () {
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::post('/', [QuestionController::class, 'store'])->middleware('auth')->name('questions.store');
 
+// Public legal info page
+Route::get('/about', [AboutPageController::class, 'show'])->name('apply');
+
 // Public question detail
 Route::get('/questions/{question}', [QuestionController::class, 'show'])->name('questions.show');
 
@@ -50,8 +54,8 @@ Route::get('/email/change/{token}', [SettingsController::class, 'confirmNewEmail
 Route::middleware('auth')->group(function () {
     // Settings (Phase 2) — nickname / email / password
     Route::get('/settings', [SettingsController::class, 'edit'])->name('settings');
-    Route::post('/settings/name',     [SettingsController::class, 'updateName'])->name('settings.name');
-    Route::post('/settings/email',    [SettingsController::class, 'changeEmail'])->name('settings.email');
+    Route::post('/settings/name', [SettingsController::class, 'updateName'])->name('settings.name');
+    Route::post('/settings/email', [SettingsController::class, 'changeEmail'])->name('settings.email');
     Route::post('/settings/password', [SettingsController::class, 'updatePassword'])->name('settings.password');
 
     // Member's own questions
@@ -60,9 +64,9 @@ Route::middleware('auth')->group(function () {
 
 // Creator area (creator or admin)
 Route::middleware(['auth', 'role:creator,admin'])->prefix('creator')->name('creator.')->group(function () {
-    Route::get('/',               \App\Livewire\CreatorDashboard::class)->name('dashboard');
-    Route::get('/profile',        \App\Livewire\CreatorProfile::class)->name('profile');
-    Route::get('/answered',       [CreatorAnsweredController::class, 'index'])->name('answered');
+    Route::get('/', \App\Livewire\CreatorDashboard::class)->name('dashboard');
+    Route::get('/profile', \App\Livewire\CreatorProfile::class)->name('profile');
+    Route::get('/answered', [CreatorAnsweredController::class, 'index'])->name('answered');
     Route::get('/questions/{question}', \App\Livewire\CreatorQuestionDetail::class)->name('questions.show');
     Route::post('/questions/{question}/claim', [QuestionClaimController::class, 'store'])->name('questions.claim');
 });
@@ -70,8 +74,8 @@ Route::middleware(['auth', 'role:creator,admin'])->prefix('creator')->name('crea
 // Admin area (built out in Phases 6–7 — stubs)
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/questions', \App\Livewire\AdminQuestionsTable::class)->name('questions');
-    Route::get('/creators',  \App\Livewire\AdminCreatorManagement::class)->name('creators');
-    Route::get('/users',     \App\Livewire\AdminUserManagement::class)->name('users');
+    Route::get('/creators', \App\Livewire\AdminCreatorManagement::class)->name('creators');
+    Route::get('/users', \App\Livewire\AdminUserManagement::class)->name('users');
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';
