@@ -30,7 +30,7 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::post('/', [QuestionController::class, 'store'])->middleware('auth')->name('questions.store');
 
 // Public legal info page
-Route::get('/about', [AboutPageController::class, 'show'])->name('apply');
+Route::get('/about', [AboutPageController::class, 'show'])->name('about');
 
 // Public question detail
 Route::get('/questions/{question}', [QuestionController::class, 'show'])->name('questions.show');
