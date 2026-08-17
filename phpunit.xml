@@ -18,6 +18,14 @@
         </include>
     </source>
     <php>
+        <!--
+            Booting Laravel under PHPUnit costs ~70MB before a single test runs,
+            and PHPUnit holds on to roughly 0.4MB per test after that, so the
+            suite peaks around 167MB - over PHP's 128M default. Not a leak; the
+            suite simply outgrew the default. 512M leaves room to roughly triple
+            the test count before this needs revisiting.
+        -->
+        <ini name="memory_limit" value="512M"/>
         <env name="APP_ENV" value="testing"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
