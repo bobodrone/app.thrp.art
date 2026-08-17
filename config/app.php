@@ -2,7 +2,6 @@
 
 return [
 
-
     'cron_token' => env('CRON_TOKEN'),
 
     /*

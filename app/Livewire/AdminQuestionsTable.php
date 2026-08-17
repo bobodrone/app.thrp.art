@@ -162,7 +162,7 @@ class AdminQuestionsTable extends Component
         return view('livewire.admin.questions-table', [
             'questions' => $questions,
         ])
-        ->layout('layouts.app')
-        ->title('All Questions — Admin — THRP');
+            ->layout('layouts.app')
+            ->title('All Questions — Admin — THRP');
     }
 }

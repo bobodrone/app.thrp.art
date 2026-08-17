@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\QuestionStatus;
 use App\Enums\UserRole;
+use Database\Factories\QuestionFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -15,8 +16,9 @@ use Illuminate\Support\Facades\DB;
 
 class Question extends Model
 {
-    /** @use HasFactory<\Database\Factories\QuestionFactory> */
+    /** @use HasFactory<QuestionFactory> */
     use HasFactory;
+
     use SoftDeletes;
 
     protected $casts = [

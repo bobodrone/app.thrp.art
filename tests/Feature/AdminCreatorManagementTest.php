@@ -4,15 +4,14 @@ namespace Tests\Feature;
 
 use App\Enums\ApplicationStatus;
 use App\Enums\UserRole;
-use App\Jobs\NotifyAdminsOfNewApplication;
+use App\Livewire\AdminCreatorManagement;
 use App\Mail\ApplicationRejected;
 use App\Mail\UserRoleInvite;
 use App\Models\CreatorApplication;
+use App\Models\Question;
 use App\Models\User;
-use App\Services\UserInviter;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -60,7 +59,7 @@ class AdminCreatorManagementTest extends TestCase
         ]);
 
         Livewire::actingAs($admin)
-            ->test(\App\Livewire\AdminCreatorManagement::class)
+            ->test(AdminCreatorManagement::class)
             ->call('approve', $app->id)
             ->assertHasNoErrors();
 
@@ -90,7 +89,7 @@ class AdminCreatorManagementTest extends TestCase
         ]);
 
         Livewire::actingAs($admin)
-            ->test(\App\Livewire\AdminCreatorManagement::class)
+            ->test(AdminCreatorManagement::class)
             ->call('approve', $app->id)
             ->assertHasErrors(['approve_' . $app->id]);
 
@@ -112,7 +111,7 @@ class AdminCreatorManagementTest extends TestCase
 
         // Without notify checkbox
         Livewire::actingAs($admin)
-            ->test(\App\Livewire\AdminCreatorManagement::class)
+            ->test(AdminCreatorManagement::class)
             ->set('notifyReject', false)
             ->call('reject', $app->id)
             ->assertHasNoErrors();
@@ -132,7 +131,7 @@ class AdminCreatorManagementTest extends TestCase
         ]);
 
         Livewire::actingAs($admin)
-            ->test(\App\Livewire\AdminCreatorManagement::class)
+            ->test(AdminCreatorManagement::class)
             ->set('notifyReject', true)
             ->call('reject', $app2->id);
 
@@ -144,7 +143,7 @@ class AdminCreatorManagementTest extends TestCase
         $admin = User::factory()->create(['role' => UserRole::Admin]);
 
         Livewire::actingAs($admin)
-            ->test(\App\Livewire\AdminCreatorManagement::class)
+            ->test(AdminCreatorManagement::class)
             ->set('inviteName', '')
             ->set('inviteEmail', '')
             ->call('invite')
@@ -157,7 +156,7 @@ class AdminCreatorManagementTest extends TestCase
         $admin = User::factory()->create(['role' => UserRole::Admin]);
 
         Livewire::actingAs($admin)
-            ->test(\App\Livewire\AdminCreatorManagement::class)
+            ->test(AdminCreatorManagement::class)
             ->set('inviteName', 'Direct Invite')
             ->set('inviteEmail', 'direct@example.com')
             ->call('invite')
@@ -175,7 +174,7 @@ class AdminCreatorManagementTest extends TestCase
         $creator = User::factory()->create(['role' => UserRole::Creator]);
 
         Livewire::actingAs($admin)
-            ->test(\App\Livewire\AdminCreatorManagement::class)
+            ->test(AdminCreatorManagement::class)
             ->call('revoke', $creator->id)
             ->assertHasNoErrors();
 
@@ -186,7 +185,7 @@ class AdminCreatorManagementTest extends TestCase
     {
         $admin   = User::factory()->create(['role' => UserRole::Admin]);
         $creator = User::factory()->create(['role' => UserRole::Creator, 'name' => 'C Answerer']);
-        \App\Models\Question::factory()->answeredBy($creator)->create();
+        Question::factory()->answeredBy($creator)->create();
 
         $this->actingAs($admin)->get('/admin/responders')
             ->assertOk()

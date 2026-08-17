@@ -3,15 +3,11 @@
 namespace Tests\Feature;
 
 use App\Enums\ApplicationStatus;
-use App\Enums\UserRole;
 use App\Jobs\NotifyAdminsOfNewApplication;
-use App\Mail\ApplicationRejected;
-use App\Mail\UserRoleInvite;
+use App\Livewire\CreatorApplicationForm;
 use App\Models\CreatorApplication;
 use App\Models\User;
-use App\Services\UserInviter;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -45,7 +41,7 @@ class ApplyTest extends TestCase
         $member = User::factory()->create();
 
         Livewire::actingAs($member)
-            ->test(\App\Livewire\CreatorApplicationForm::class)
+            ->test(CreatorApplicationForm::class)
             ->set('name', 'New Applicant')
             ->set('email', 'new@example.com')
             ->set('message', str_repeat('I would like to be a creator please. ', 5))
@@ -66,7 +62,7 @@ class ApplyTest extends TestCase
     {
         Queue::fake();
 
-        Livewire::test(\App\Livewire\CreatorApplicationForm::class)
+        Livewire::test(CreatorApplicationForm::class)
             ->set('name', 'Guest Applicant')
             ->set('email', 'guest@example.com')
             ->set('message', str_repeat('Some good reasons to be a creator please. ', 5))
@@ -80,7 +76,7 @@ class ApplyTest extends TestCase
 
     public function test_validation_rejects_short_fields(): void
     {
-        Livewire::test(\App\Livewire\CreatorApplicationForm::class)
+        Livewire::test(CreatorApplicationForm::class)
             ->set('name', 'a')
             ->set('email', 'not-an-email')
             ->set('message', 'short')
@@ -98,7 +94,7 @@ class ApplyTest extends TestCase
             'applied_at' => now(),
         ]);
 
-        Livewire::test(\App\Livewire\CreatorApplicationForm::class)
+        Livewire::test(CreatorApplicationForm::class)
             ->set('name', 'Second App')
             ->set('email', 'dup@example.com')
             ->set('message', str_repeat('Trying again. ', 5))
@@ -119,7 +115,7 @@ class ApplyTest extends TestCase
             'applied_at' => now(),
         ]);
 
-        Livewire::test(\App\Livewire\CreatorApplicationForm::class)
+        Livewire::test(CreatorApplicationForm::class)
             ->set('name', 'Second App')
             ->set('email', 'approve@example.com')
             ->set('message', str_repeat('Trying again. ', 5))
@@ -138,7 +134,7 @@ class ApplyTest extends TestCase
             'reviewed_at' => now(),
         ]);
 
-        Livewire::test(\App\Livewire\CreatorApplicationForm::class)
+        Livewire::test(CreatorApplicationForm::class)
             ->set('name', 'Second App')
             ->set('email', 'rejected@example.com')
             ->set('message', str_repeat('Trying again. ', 5))

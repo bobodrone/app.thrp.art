@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\UserRole;
+use App\Livewire\AdminQuestionsTable;
 use App\Livewire\CreatorQuestionDetail;
 use App\Models\Answer;
 use App\Models\Question;
@@ -158,7 +159,7 @@ class AnswererLinkTest extends TestCase
         $this->answered($creator);
 
         Livewire::actingAs(User::factory()->admin()->create())
-            ->test(\App\Livewire\AdminQuestionsTable::class)
+            ->test(AdminQuestionsTable::class)
             ->assertSee(route('creators.show', $creator), escape: false);
     }
 }

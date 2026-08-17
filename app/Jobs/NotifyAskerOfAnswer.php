@@ -21,7 +21,9 @@ class NotifyAskerOfAnswer implements ShouldQueue
     public function handle(): void
     {
         $asker = $this->question->asker;
-        if (!$asker) return;
+        if (! $asker) {
+            return;
+        }
 
         $preview = Str::limit($this->question->content, 200);
         $url     = route('questions.show', $this->question->id, absolute: false);

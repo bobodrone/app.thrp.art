@@ -10,6 +10,7 @@ use Livewire\Component;
 class AdminUserManagement extends Component
 {
     public string $inviteEmail = '';
+
     public string $inviteName = '';
 
     public function invite(UserInviter $inviter): void
@@ -31,11 +32,13 @@ class AdminUserManagement extends Component
     {
         if ($userId === auth()->id()) {
             $this->addError('revoke_' . $userId, 'You cannot revoke your own admin status.');
+
             return;
         }
 
         if (User::where('role', UserRole::Admin)->count() <= 1) {
             $this->addError('revoke_' . $userId, 'Cannot remove the last remaining admin.');
+
             return;
         }
 
@@ -53,7 +56,7 @@ class AdminUserManagement extends Component
             'admins'       => $admins,
             'currentUserId' => auth()->id(),
         ])
-        ->layout('layouts.app')
-        ->title('Manage Admins — THRP');
+            ->layout('layouts.app')
+            ->title('Manage Admins — THRP');
     }
 }

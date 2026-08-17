@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\QuestionStatus;
 use App\Enums\UserRole;
+use App\Livewire\AdminQuestionsTable;
 use App\Models\Question;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -62,7 +63,7 @@ class AdminQuestionsTableTest extends TestCase
         Question::factory()->answeredBy($creator)->create(['asked_by' => $asker->id, 'content' => 'An answered one here']);
 
         $component = Livewire::actingAs($admin)
-            ->test(\App\Livewire\AdminQuestionsTable::class)
+            ->test(AdminQuestionsTable::class)
             ->set('statusFilter', 'answered')
             ->assertSee('An answered one here')
             ->assertDontSee('An asked one here');
@@ -75,7 +76,7 @@ class AdminQuestionsTableTest extends TestCase
         Question::factory()->create(['asked_by' => $asker->id, 'content' => 'Visible question']);
 
         $component = Livewire::actingAs($admin)
-            ->test(\App\Livewire\AdminQuestionsTable::class)
+            ->test(AdminQuestionsTable::class)
             ->set('statusFilter', 'bogus')
             ->assertSee('Visible question');
     }
@@ -88,7 +89,7 @@ class AdminQuestionsTableTest extends TestCase
         Question::factory()->create(['asked_by' => $asker->id, 'content' => 'Best hiking trails in Japan']);
 
         $component = Livewire::actingAs($admin)
-            ->test(\App\Livewire\AdminQuestionsTable::class)
+            ->test(AdminQuestionsTable::class)
             ->set('search', 'sourdough')
             ->assertSee('How to bake sourdough bread')
             ->assertDontSee('Best hiking trails in Japan');
@@ -103,7 +104,7 @@ class AdminQuestionsTableTest extends TestCase
         Question::factory()->answeredBy($creator)->create(['asked_by' => $asker->id, 'content' => 'Answered question']);
 
         $component = Livewire::actingAs($admin)
-            ->test(\App\Livewire\AdminQuestionsTable::class)
+            ->test(AdminQuestionsTable::class)
             ->set('statusFilter', 'answered')
             ->set('search', 'nonexistent')
             ->assertDontSee('Open question')
@@ -138,7 +139,7 @@ class AdminQuestionsTableTest extends TestCase
         Question::factory()->answeredBy(User::factory()->creator()->create())->create(['asked_by' => $asker->id, 'content' => 'Answered B']);
 
         $component = Livewire::actingAs($admin)
-            ->test(\App\Livewire\AdminQuestionsTable::class)
+            ->test(AdminQuestionsTable::class)
             ->set('statusFilter', 'answered')
             ->assertSee('Answered A')
             ->assertSee('Answered B');
@@ -151,7 +152,7 @@ class AdminQuestionsTableTest extends TestCase
         Question::factory()->create(['asked_by' => $asker->id, 'content' => 'Visible question']);
 
         $component = Livewire::actingAs($admin)
-            ->test(\App\Livewire\AdminQuestionsTable::class)
+            ->test(AdminQuestionsTable::class)
             ->set('search', 'zzznomatchzzz')
             ->assertSee('No questions match your filters.');
     }
@@ -163,7 +164,7 @@ class AdminQuestionsTableTest extends TestCase
         $q = Question::factory()->create(['asked_by' => $asker->id, 'content' => 'Original content here']);
 
         Livewire::actingAs($admin)
-            ->test(\App\Livewire\AdminQuestionsTable::class)
+            ->test(AdminQuestionsTable::class)
             ->call('edit', $q->id)
             ->assertSet('editContent', 'Original content here')
             ->assertSet('showEdit', true)
@@ -182,7 +183,7 @@ class AdminQuestionsTableTest extends TestCase
         $q = Question::factory()->create(['asked_by' => $asker->id, 'content' => 'Original content here']);
 
         Livewire::actingAs($admin)
-            ->test(\App\Livewire\AdminQuestionsTable::class)
+            ->test(AdminQuestionsTable::class)
             ->call('edit', $q->id)
             ->set('editContent', 'short')
             ->call('saveEdit')
@@ -202,7 +203,7 @@ class AdminQuestionsTableTest extends TestCase
         ]);
 
         Livewire::actingAs($admin)
-            ->test(\App\Livewire\AdminQuestionsTable::class)
+            ->test(AdminQuestionsTable::class)
             ->call('edit', $q->id)
             ->assertSet('editHasAnswer', true)
             ->set('editAnswer', 'A corrected answer that is long enough')
@@ -222,7 +223,7 @@ class AdminQuestionsTableTest extends TestCase
         ]);
 
         Livewire::actingAs($admin)
-            ->test(\App\Livewire\AdminQuestionsTable::class)
+            ->test(AdminQuestionsTable::class)
             ->call('deleteAnswer', $q->id);
 
         $fresh = $q->fresh();
@@ -259,7 +260,7 @@ class AdminQuestionsTableTest extends TestCase
         $q = Question::factory()->create(['asked_by' => $asker->id, 'content' => 'Doomed question here']);
 
         Livewire::actingAs($admin)
-            ->test(\App\Livewire\AdminQuestionsTable::class)
+            ->test(AdminQuestionsTable::class)
             ->call('delete', $q->id)
             ->assertDontSee('Doomed question here');
 
@@ -274,7 +275,7 @@ class AdminQuestionsTableTest extends TestCase
         $q->delete();
 
         Livewire::actingAs($admin)
-            ->test(\App\Livewire\AdminQuestionsTable::class)
+            ->test(AdminQuestionsTable::class)
             ->assertDontSee('Trashed question here')
             ->set('showDeleted', true)
             ->assertSee('Trashed question here')
@@ -289,7 +290,7 @@ class AdminQuestionsTableTest extends TestCase
         $q->delete();
 
         Livewire::actingAs($admin)
-            ->test(\App\Livewire\AdminQuestionsTable::class)
+            ->test(AdminQuestionsTable::class)
             ->set('showDeleted', true)
             ->call('restore', $q->id);
 
@@ -304,7 +305,7 @@ class AdminQuestionsTableTest extends TestCase
         $q->delete();
 
         Livewire::actingAs($admin)
-            ->test(\App\Livewire\AdminQuestionsTable::class)
+            ->test(AdminQuestionsTable::class)
             ->set('showDeleted', true)
             ->call('forceDelete', $q->id);
 
@@ -323,7 +324,7 @@ class AdminQuestionsTableTest extends TestCase
         $q->removeAnswer($q->primaryAnswer);
 
         Livewire::actingAs($admin)
-            ->test(\App\Livewire\AdminQuestionsTable::class)
+            ->test(AdminQuestionsTable::class)
             ->call('restoreAnswer', $q->id);
 
         $fresh = $q->fresh();

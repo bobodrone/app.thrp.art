@@ -2,8 +2,9 @@
 
 namespace Database\Seeders;
 
-use App\Enums\QuestionStatus;
+use App\Enums\ApplicationStatus;
 use App\Enums\UserRole;
+use App\Models\CreatorApplication;
 use App\Models\Question;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -102,25 +103,25 @@ class DatabaseSeeder extends Seeder
             ->create();
 
         // 3 creator applications across different statuses
-        \App\Models\CreatorApplication::create([
+        CreatorApplication::create([
             'email'   => 'applicant@example.com',
             'name'    => 'Annie Applicant',
             'message' => 'I love answering questions about tea and philosophy and would like to help out on the platform.',
-            'status'  => \App\Enums\ApplicationStatus::Pending,
+            'status'  => ApplicationStatus::Pending,
             'applied_at' => now()->subDays(2),
         ]);
-        \App\Models\CreatorApplication::create([
+        CreatorApplication::create([
             'email'   => 'applicant2@example.com',
             'name'    => 'Alex Applicant',
             'message' => 'Another pending application — I have experience running Q&A communities and would like to contribute.',
-            'status'  => \App\Enums\ApplicationStatus::Pending,
+            'status'  => ApplicationStatus::Pending,
             'applied_at' => now()->subDays(1),
         ]);
-        \App\Models\CreatorApplication::create([
+        CreatorApplication::create([
             'email'   => 'approved@example.com',
             'name'    => 'April Applicant',
             'message' => 'I would love to join as a creator to share my knowledge of gardening.',
-            'status'  => \App\Enums\ApplicationStatus::Approved,
+            'status'  => ApplicationStatus::Approved,
             'applied_at' => now()->subDays(10),
             'reviewed_at' => now()->subDays(8),
         ]);
@@ -132,7 +133,7 @@ class DatabaseSeeder extends Seeder
      * than random: re-seeding replaces these instead of piling up orphans.
      *
      * @param  array{int, int, int}  $rgb  background colour
-     * @return string  path relative to the disk, for answers.image_path
+     * @return string path relative to the disk, for answers.image_path
      */
     private function answerImage(string $filename, string $label, array $rgb): string
     {

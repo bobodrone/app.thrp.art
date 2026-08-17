@@ -6,15 +6,17 @@ use App\Enums\ApplicationStatus;
 use App\Enums\UserRole;
 use App\Jobs\NotifyAdminsOfNewApplication;
 use App\Models\CreatorApplication;
-use Illuminate\Http\RedirectResponse;
 use Livewire\Component;
 
 class CreatorApplicationForm extends Component
 {
     public string $name    = '';
+
     public string $email   = '';
+
     public string $message = '';
-    public bool   $submitted = false;
+
+    public bool $submitted = false;
 
     protected function rules(): array
     {
@@ -45,10 +47,12 @@ class CreatorApplicationForm extends Component
 
         if ($existing && $existing->status === ApplicationStatus::Pending) {
             $this->addError('email', 'We already have a pending application from this email address.');
+
             return;
         }
         if ($existing && $existing->status === ApplicationStatus::Approved) {
             $this->addError('email', 'An account with this email has already been approved as a responder.');
+
             return;
         }
 

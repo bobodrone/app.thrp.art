@@ -3,7 +3,6 @@
 namespace App\Livewire;
 
 use App\Livewire\Concerns\HandlesImageUploads;
-use App\Models\User;
 use Livewire\Component;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
@@ -58,8 +57,8 @@ class CreatorProfile extends Component
             ),
             'canAddLink' => count($this->socialLinks) < self::MAX_LINKS,
         ])
-        ->layout('layouts.app')
-        ->title('Responder Profile — THRP');
+            ->layout('layouts.app')
+            ->title('Responder Profile — THRP');
     }
 
     public function updatedAvatar(): void

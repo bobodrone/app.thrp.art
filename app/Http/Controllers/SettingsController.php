@@ -88,12 +88,14 @@ class SettingsController extends Controller
 
         if ($pending->isExpired()) {
             $pending->delete();
+
             return Redirect::route('settings')
                 ->withErrors(['email' => 'This confirmation link has expired. Please request a new one.']);
         }
 
         if (User::where('email', $pending->new_email)->exists()) {
             $pending->delete();
+
             return Redirect::route('settings')
                 ->withErrors(['email' => 'That email address is already in use.']);
         }

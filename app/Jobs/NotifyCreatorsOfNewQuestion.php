@@ -23,7 +23,9 @@ class NotifyCreatorsOfNewQuestion implements ShouldQueue
     public function handle(): void
     {
         $creators = User::whereIn('role', [UserRole::Creator, UserRole::Admin])->get();
-        if ($creators->isEmpty()) return;
+        if ($creators->isEmpty()) {
+            return;
+        }
 
         $preview = Str::limit($this->question->content, 200);
         $url     = route('creator.questions.show', $this->question->id, absolute: false);

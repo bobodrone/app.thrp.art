@@ -23,6 +23,7 @@ class CreatorQuestionDetail extends Component
     }
 
     public int $questionId;
+
     public string $answer = '';
 
     /** Pending image for a brand-new answer. */
@@ -101,8 +102,8 @@ class CreatorQuestionDetail extends Component
                 $this->removeAnswerImage ? null : $editing?->imageUrl(),
             ),
         ])
-        ->layout('layouts.app')
-        ->title('Question — Responder View — THRP');
+            ->layout('layouts.app')
+            ->title('Question — Responder View — THRP');
     }
 
     public function claim()
@@ -111,6 +112,7 @@ class CreatorQuestionDetail extends Component
 
         if (! $claimed) {
             $this->addError('claim', 'Question has already been claimed by someone else.');
+
             return;
         }
 
@@ -130,6 +132,7 @@ class CreatorQuestionDetail extends Component
 
         if ($updated === 0) {
             $this->addError('unclaim', 'Could not unclaim — you may not be the current claimer.');
+
             return;
         }
 
@@ -203,6 +206,7 @@ class CreatorQuestionDetail extends Component
         if ($answer === null) {
             $this->deleteImage($imagePath);
             $this->addError('answer', 'Could not submit — question may no longer be claimed by you.');
+
             return;
         }
 
@@ -241,6 +245,7 @@ class CreatorQuestionDetail extends Component
         if ($answer === null) {
             $this->deleteImage($imagePath);
             $this->addError('alternative', 'Could not add your answer — you may already have one on this question.');
+
             return;
         }
 
@@ -263,6 +268,7 @@ class CreatorQuestionDetail extends Component
 
         if ($answer === null || ! $question->isModeratableBy(auth()->user())) {
             $this->addError('moderate', 'You are not allowed to remove this answer.');
+
             return;
         }
 
@@ -288,6 +294,7 @@ class CreatorQuestionDetail extends Component
 
         if ($answer === null || ! $question->isModeratableBy(auth()->user())) {
             $this->addError('moderate', 'You are not allowed to restore this answer.');
+
             return;
         }
 
@@ -313,6 +320,7 @@ class CreatorQuestionDetail extends Component
 
         if ($answer === null || ! $question->isPromotableBy(auth()->user(), $answer)) {
             $this->addError('promote', 'You are not allowed to change the main answer.');
+
             return;
         }
 
@@ -376,6 +384,7 @@ class CreatorQuestionDetail extends Component
 
         if ($answer === null) {
             $this->addError('answerDraft', 'You are not allowed to edit this answer.');
+
             return;
         }
 

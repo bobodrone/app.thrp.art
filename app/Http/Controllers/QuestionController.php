@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\QuestionStatus;
 use App\Http\Requests\StoreQuestionRequest;
+use App\Jobs\NotifyCreatorsOfNewQuestion;
 use App\Models\Answer;
 use App\Models\Question;
 use App\Services\MarkdownRenderer;
@@ -40,11 +42,11 @@ class QuestionController extends Controller
     {
         $q = Question::create([
             'content'  => $request->validated('content'),
-            'status'   => \App\Enums\QuestionStatus::Asked,
+            'status'   => QuestionStatus::Asked,
             'asked_by' => $request->user()->id,
         ]);
 
-        \App\Jobs\NotifyCreatorsOfNewQuestion::dispatch($q);
+        NotifyCreatorsOfNewQuestion::dispatch($q);
 
         return Redirect::route('questions.show', $q)->with('status', 'question-asked');
     }

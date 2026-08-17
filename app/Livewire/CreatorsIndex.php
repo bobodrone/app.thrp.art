@@ -80,7 +80,7 @@ class CreatorsIndex extends Component
             'sort'      => $sort,
             'direction' => $direction,
         ])
-        ->layout('layouts.app')
-        ->title('Responders — THRP');
+            ->layout('layouts.app')
+            ->title('Responders — THRP');
     }
 }

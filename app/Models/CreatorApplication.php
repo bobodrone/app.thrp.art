@@ -3,12 +3,13 @@
 namespace App\Models;
 
 use App\Enums\ApplicationStatus;
+use Database\Factories\CreatorApplicationFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class CreatorApplication extends Model
 {
-    /** @use HasFactory<\Database\Factories\CreatorApplicationFactory> */
+    /** @use HasFactory<CreatorApplicationFactory> */
     use HasFactory;
 
     protected $table = 'creator_applications';

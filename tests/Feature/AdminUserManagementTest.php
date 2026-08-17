@@ -2,17 +2,12 @@
 
 namespace Tests\Feature;
 
-use App\Enums\ApplicationStatus;
 use App\Enums\UserRole;
-use App\Jobs\NotifyAdminsOfNewApplication;
-use App\Mail\ApplicationRejected;
+use App\Livewire\AdminUserManagement;
 use App\Mail\UserRoleInvite;
-use App\Models\CreatorApplication;
 use App\Models\User;
-use App\Services\UserInviter;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -49,7 +44,7 @@ class AdminUserManagementTest extends TestCase
         $admin = User::factory()->create(['role' => UserRole::Admin]);
 
         Livewire::actingAs($admin)
-            ->test(\App\Livewire\AdminUserManagement::class)
+            ->test(AdminUserManagement::class)
             ->set('inviteEmail', 'newadmin@example.com')
             ->set('inviteName', 'New Admin')
             ->call('invite')
@@ -69,7 +64,7 @@ class AdminUserManagementTest extends TestCase
         $member = User::factory()->create(['role' => UserRole::Member, 'email' => 'existing@example.com']);
 
         Livewire::actingAs($admin)
-            ->test(\App\Livewire\AdminUserManagement::class)
+            ->test(AdminUserManagement::class)
             ->set('inviteEmail', 'existing@example.com')
             ->call('invite')
             ->assertHasNoErrors();
@@ -83,7 +78,7 @@ class AdminUserManagementTest extends TestCase
         $admin = User::factory()->create(['role' => UserRole::Admin]);
 
         Livewire::actingAs($admin)
-            ->test(\App\Livewire\AdminUserManagement::class)
+            ->test(AdminUserManagement::class)
             ->call('revoke', $admin->id)
             ->assertHasErrors(['revoke_' . $admin->id]);
 
@@ -96,7 +91,7 @@ class AdminUserManagementTest extends TestCase
         $a2 = User::factory()->create(['role' => UserRole::Admin]);
 
         Livewire::actingAs($a1)
-            ->test(\App\Livewire\AdminUserManagement::class)
+            ->test(AdminUserManagement::class)
             // revoke a2 first → now only a1 remains
             ->call('revoke', $a2->id)
             ->assertHasNoErrors();
@@ -106,7 +101,7 @@ class AdminUserManagementTest extends TestCase
         // Try to revoke a2 again (it's a member now; nothing should change),
         // then try revoking self (must block because last admin).
         Livewire::actingAs($a1)
-            ->test(\App\Livewire\AdminUserManagement::class)
+            ->test(AdminUserManagement::class)
             ->call('revoke', $a1->id)
             ->assertHasErrors(['revoke_' . $a1->id]);
 
@@ -119,7 +114,7 @@ class AdminUserManagementTest extends TestCase
         $other = User::factory()->create(['role' => UserRole::Admin]);
 
         Livewire::actingAs($admin)
-            ->test(\App\Livewire\AdminUserManagement::class)
+            ->test(AdminUserManagement::class)
             ->call('revoke', $other->id)
             ->assertHasNoErrors();
 

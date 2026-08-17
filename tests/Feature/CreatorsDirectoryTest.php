@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Enums\QuestionStatus;
 use App\Livewire\CreatorsIndex;
 use App\Models\Question;
 use App\Models\User;

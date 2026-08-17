@@ -1,16 +1,24 @@
 <?php
 
+use App\Http\Controllers\AboutPageController;
 use App\Http\Controllers\AdminBootstrapController;
 use App\Http\Controllers\CreatorAnsweredController;
 use App\Http\Controllers\HomeController;
-use App\Http\Controllers\AboutPageController;
 use App\Http\Controllers\MyQuestionsController;
-use App\Http\Controllers\QuestionClaimController;
 use App\Http\Controllers\PublicCreatorController;
+use App\Http\Controllers\QuestionClaimController;
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\SettingsController;
-use Illuminate\Support\Facades\Route;
+use App\Livewire\AdminCreatorManagement;
+use App\Livewire\AdminQuestionsTable;
+use App\Livewire\AdminUserManagement;
+use App\Livewire\CreatorApplicationForm;
+use App\Livewire\CreatorDashboard;
+use App\Livewire\CreatorProfile;
+use App\Livewire\CreatorQuestionDetail;
+use App\Livewire\CreatorsIndex;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Route;
 
 // Run cron
 Route::get('/cron/run', function () {
@@ -36,11 +44,11 @@ Route::get('/about', [AboutPageController::class, 'show'])->name('about');
 Route::get('/questions/{question}', [QuestionController::class, 'show'])->name('questions.show');
 
 // Public responder directory
-Route::get('/responders', \App\Livewire\CreatorsIndex::class)->name('creators.index');
+Route::get('/responders', CreatorsIndex::class)->name('creators.index');
 Route::get('/responders/{user}', [PublicCreatorController::class, 'show'])->name('creators.show');
 
 // Public responder application
-Route::get('/apply', \App\Livewire\CreatorApplicationForm::class)->name('apply');
+Route::get('/apply', CreatorApplicationForm::class)->name('apply');
 
 // One-time admin bootstrap — public (self-disables once an admin exists)
 Route::get('/admin/setup', [AdminBootstrapController::class, 'create'])->name('admin.setup');
@@ -64,18 +72,18 @@ Route::middleware('auth')->group(function () {
 
 // Responder area (responder or admin). The stored role value is still 'creator'.
 Route::middleware(['auth', 'role:creator,admin'])->prefix('responder')->name('creator.')->group(function () {
-    Route::get('/', \App\Livewire\CreatorDashboard::class)->name('dashboard');
-    Route::get('/profile', \App\Livewire\CreatorProfile::class)->name('profile');
+    Route::get('/', CreatorDashboard::class)->name('dashboard');
+    Route::get('/profile', CreatorProfile::class)->name('profile');
     Route::get('/answered', [CreatorAnsweredController::class, 'index'])->name('answered');
-    Route::get('/questions/{question}', \App\Livewire\CreatorQuestionDetail::class)->name('questions.show');
+    Route::get('/questions/{question}', CreatorQuestionDetail::class)->name('questions.show');
     Route::post('/questions/{question}/claim', [QuestionClaimController::class, 'store'])->name('questions.claim');
 });
 
 // Admin area (built out in Phases 6–7 — stubs)
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
-    Route::get('/questions', \App\Livewire\AdminQuestionsTable::class)->name('questions');
-    Route::get('/responders', \App\Livewire\AdminCreatorManagement::class)->name('creators');
-    Route::get('/users', \App\Livewire\AdminUserManagement::class)->name('users');
+    Route::get('/questions', AdminQuestionsTable::class)->name('questions');
+    Route::get('/responders', AdminCreatorManagement::class)->name('creators');
+    Route::get('/users', AdminUserManagement::class)->name('users');
 });
 
 // Legacy /creator(s) URLs, kept alive for bookmarks and inbound links after the

@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\QuestionStatus;
 use App\Enums\UserRole;
 use App\Jobs\NotifyAskerOfAnswer;
+use App\Livewire\CreatorQuestionDetail;
 use App\Models\Question;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -45,7 +46,7 @@ class CreatorFlowTest extends TestCase
         $q       = Question::factory()->create(['asked_by' => $asker->id]);
 
         Livewire::actingAs($creator)
-            ->test(\App\Livewire\CreatorQuestionDetail::class, ['question' => $q])
+            ->test(CreatorQuestionDetail::class, ['question' => $q])
             ->call('claim')
             ->assertHasNoErrors();
 
@@ -72,7 +73,7 @@ class CreatorFlowTest extends TestCase
             ]);
 
         Livewire::actingAs($loser)
-            ->test(\App\Livewire\CreatorQuestionDetail::class, ['question' => $q->fresh()])
+            ->test(CreatorQuestionDetail::class, ['question' => $q->fresh()])
             ->call('claim')
             ->assertHasErrors(['claim']);
 
@@ -88,7 +89,7 @@ class CreatorFlowTest extends TestCase
         $q       = Question::factory()->claimedBy($creator)->create(['asked_by' => $asker->id]);
 
         Livewire::actingAs($creator)
-            ->test(\App\Livewire\CreatorQuestionDetail::class, ['question' => $q])
+            ->test(CreatorQuestionDetail::class, ['question' => $q])
             ->set('answer', '## Definitely yes
 
 The answer involves **tea** and *patience*. Here is why.')
@@ -116,7 +117,7 @@ The answer involves **tea** and *patience*. Here is why.')
         $q->claimBy($creator);
 
         Livewire::actingAs($creator)
-            ->test(\App\Livewire\CreatorQuestionDetail::class, ['question' => $q])
+            ->test(CreatorQuestionDetail::class, ['question' => $q])
             ->set('answer', 'A brand new answer that is long enough')
             ->call('submitAnswer')
             ->assertHasNoErrors();
@@ -136,7 +137,7 @@ The answer involves **tea** and *patience*. Here is why.')
         $q        = Question::factory()->claimedBy($claimer)->create(['asked_by' => $asker->id]);
 
         Livewire::actingAs($interloper)
-            ->test(\App\Livewire\CreatorQuestionDetail::class, ['question' => $q])
+            ->test(CreatorQuestionDetail::class, ['question' => $q])
             ->set('answer', 'Some answer text that is long enough')
             ->call('submitAnswer')
             ->assertHasErrors(['answer']);
@@ -152,7 +153,7 @@ The answer involves **tea** and *patience*. Here is why.')
         $q       = Question::factory()->claimedBy($creator)->create();
 
         Livewire::actingAs($creator)
-            ->test(\App\Livewire\CreatorQuestionDetail::class, ['question' => $q])
+            ->test(CreatorQuestionDetail::class, ['question' => $q])
             ->set('answer', 'short')
             ->call('submitAnswer')
             ->assertHasErrors(['answer']);
@@ -165,7 +166,7 @@ The answer involves **tea** and *patience*. Here is why.')
         $q       = Question::factory()->claimedBy($creator)->create(['asked_by' => $asker->id]);
 
         Livewire::actingAs($creator)
-            ->test(\App\Livewire\CreatorQuestionDetail::class, ['question' => $q])
+            ->test(CreatorQuestionDetail::class, ['question' => $q])
             ->call('unclaim');
 
         $q->refresh();
@@ -184,7 +185,7 @@ The answer involves **tea** and *patience*. Here is why.')
         ]);
 
         Livewire::actingAs($creator)
-            ->test(\App\Livewire\CreatorQuestionDetail::class, ['question' => $q])
+            ->test(CreatorQuestionDetail::class, ['question' => $q])
             ->assertViewHas('canEditAnswer', true)
             ->call('startEditAnswer')
             ->assertSet('editingAnswerId', $q->primary_answer_id)
@@ -208,7 +209,7 @@ The answer involves **tea** and *patience*. Here is why.')
         ]);
 
         Livewire::actingAs($admin)
-            ->test(\App\Livewire\CreatorQuestionDetail::class, ['question' => $q])
+            ->test(CreatorQuestionDetail::class, ['question' => $q])
             ->assertViewHas('canEditAnswer', true)
             ->call('startEditAnswer')
             ->set('answerDraft', 'Admin corrected the answer text')
@@ -228,7 +229,7 @@ The answer involves **tea** and *patience*. Here is why.')
         ]);
 
         Livewire::actingAs($intruder)
-            ->test(\App\Livewire\CreatorQuestionDetail::class, ['question' => $q])
+            ->test(CreatorQuestionDetail::class, ['question' => $q])
             ->assertViewHas('canEditAnswer', false)
             ->set('answerDraft', 'A malicious rewrite attempt here')
             ->call('updateAnswer')
@@ -246,7 +247,7 @@ The answer involves **tea** and *patience*. Here is why.')
         ]);
 
         Livewire::actingAs($creator)
-            ->test(\App\Livewire\CreatorQuestionDetail::class, ['question' => $q])
+            ->test(CreatorQuestionDetail::class, ['question' => $q])
             ->call('startEditAnswer')
             ->set('answerDraft', 'short')
             ->call('updateAnswer')

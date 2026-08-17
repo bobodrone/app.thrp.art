@@ -2,18 +2,12 @@
 
 namespace Tests\Feature;
 
-use App\Enums\ApplicationStatus;
 use App\Enums\UserRole;
-use App\Jobs\NotifyAdminsOfNewApplication;
-use App\Mail\ApplicationRejected;
 use App\Mail\UserRoleInvite;
-use App\Models\CreatorApplication;
 use App\Models\User;
 use App\Services\UserInviter;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Queue;
-use Livewire\Livewire;
 use Tests\TestCase;
 
 class UserInviterServiceTest extends TestCase

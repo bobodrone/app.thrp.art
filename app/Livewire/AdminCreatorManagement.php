@@ -15,8 +15,10 @@ use Livewire\Component;
 class AdminCreatorManagement extends Component
 {
     public string $inviteName  = '';
+
     public string $inviteEmail = '';
-    public bool   $notifyReject = false;
+
+    public bool $notifyReject = false;
 
     public function approve(int $applicationId, UserInviter $inviter): void
     {
@@ -26,6 +28,7 @@ class AdminCreatorManagement extends Component
 
         if (! $app) {
             $this->addError('approve_' . $applicationId, 'Application not found or already reviewed.');
+
             return;
         }
 
@@ -47,6 +50,7 @@ class AdminCreatorManagement extends Component
 
         if (! $app) {
             $this->addError('reject_' . $applicationId, 'Application not found or already reviewed.');
+
             return;
         }
 
@@ -108,7 +112,7 @@ class AdminCreatorManagement extends Component
             'creators'         => $creators,
             'answeredCounts'  => $answeredCounts,
         ])
-        ->layout('layouts.app')
-        ->title('Manage Responders — Admin — THRP');
+            ->layout('layouts.app')
+            ->title('Manage Responders — Admin — THRP');
     }
 }

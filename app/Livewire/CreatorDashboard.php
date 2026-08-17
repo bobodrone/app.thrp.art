@@ -5,7 +5,6 @@ namespace App\Livewire;
 use App\Enums\QuestionStatus;
 use App\Models\Question;
 use Illuminate\Http\RedirectResponse;
-use Livewire\Attributes\On;
 use Livewire\Component;
 
 class CreatorDashboard extends Component
@@ -28,8 +27,8 @@ class CreatorDashboard extends Component
             'openQuestions' => $openQuestions,
             'myClaimed'     => $myClaimed,
         ])
-        ->layout('layouts.app')
-        ->title('Responder Dashboard — THRP');
+            ->layout('layouts.app')
+            ->title('Responder Dashboard — THRP');
     }
 
     public function claim($questionId): ?RedirectResponse
@@ -38,6 +37,7 @@ class CreatorDashboard extends Component
 
         if (! $claimed) {
             $this->addError('claim_' . $questionId, 'Question has already been claimed by someone else.');
+
             return null;
         }
 
