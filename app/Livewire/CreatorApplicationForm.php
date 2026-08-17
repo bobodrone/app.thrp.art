@@ -48,7 +48,7 @@ class CreatorApplicationForm extends Component
             return;
         }
         if ($existing && $existing->status === ApplicationStatus::Approved) {
-            $this->addError('email', 'An account with this email has already been approved as a creator.');
+            $this->addError('email', 'An account with this email has already been approved as a responder.');
             return;
         }
 
@@ -68,6 +68,6 @@ class CreatorApplicationForm extends Component
     {
         return view('livewire.apply.form')
             ->layout('layouts.app')
-            ->title('Become a Creator — THRP');
+            ->title('Become a Responder — THRP');
     }
 }

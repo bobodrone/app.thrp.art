@@ -19,7 +19,7 @@ class CreatorFlowTest extends TestCase
     public function test_creator_dashboard_is_forbidden_for_members(): void
     {
         $member = User::factory()->create(['role' => UserRole::Member]);
-        $this->actingAs($member)->get('/creator')->assertForbidden();
+        $this->actingAs($member)->get('/responder')->assertForbidden();
     }
 
     public function test_creator_dashboard_renders_open_and_my_claimed(): void
@@ -30,10 +30,10 @@ class CreatorFlowTest extends TestCase
         Question::factory()->create(['asked_by' => $asker->id, 'content' => 'An open question sits here']);
         Question::factory()->claimedBy($creator)->create(['asked_by' => $asker->id, 'content' => 'A claimed one of mine']);
 
-        $response = $this->actingAs($creator)->get('/creator');
+        $response = $this->actingAs($creator)->get('/responder');
 
         $response->assertStatus(200);
-        $response->assertSee('Creator Dashboard');
+        $response->assertSee('Responder Dashboard');
         $response->assertSee('An open question sits here');
         $response->assertSee('A claimed one of mine');
     }
@@ -263,7 +263,7 @@ The answer involves **tea** and *patience*. Here is why.')
         $mine   = Question::factory()->answeredBy($me)->create(['asked_by' => $asker->id, 'content' => 'Mine answered']);
         $theirs = Question::factory()->answeredBy($otherC)->create(['asked_by' => $asker->id, 'content' => 'Theirs answered']);
 
-        $response = $this->actingAs($me)->get('/creator/answered');
+        $response = $this->actingAs($me)->get('/responder/answered');
 
         $response->assertStatus(200);
         $response->assertSee('Mine answered');
@@ -276,7 +276,7 @@ The answer involves **tea** and *patience*. Here is why.')
         $asker   = User::factory()->create();
         $q = Question::factory()->answeredBy($creator)->create(['asked_by' => $asker->id]);
 
-        $response = $this->actingAs($creator)->get('/creator/answered');
+        $response = $this->actingAs($creator)->get('/responder/answered');
 
         $response->assertStatus(200);
         $response->assertSee('Edit answer');
@@ -293,7 +293,7 @@ The answer involves **tea** and *patience*. Here is why.')
             'content'  => 'Answered by somebody else',
         ]);
 
-        $response = $this->actingAs($admin)->get('/creator/answered');
+        $response = $this->actingAs($admin)->get('/responder/answered');
 
         $response->assertStatus(200);
         $response->assertSee('Answered by somebody else');

@@ -17,7 +17,7 @@
             </h1>
 
             <p class="mt-6 max-w-md font-body text-lg text-soil-700">
-                Ask anything. Our creators will respond to every query personally.
+                Ask anything. Our responders will respond to every query personally.
             </p>
 
             <div class="mt-10 max-w-xl">

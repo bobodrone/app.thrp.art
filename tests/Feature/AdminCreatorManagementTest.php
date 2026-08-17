@@ -23,7 +23,7 @@ class AdminCreatorManagementTest extends TestCase
     public function test_member_is_forbidden(): void
     {
         $this->actingAs(User::factory()->create(['role' => UserRole::Member]))
-            ->get('/admin/creators')->assertForbidden();
+            ->get('/admin/responders')->assertForbidden();
     }
 
     public function test_admin_sees_pending_apps_creators_direct_invite(): void
@@ -38,11 +38,11 @@ class AdminCreatorManagementTest extends TestCase
             'applied_at' => now(),
         ]);
 
-        $this->actingAs($admin)->get('/admin/creators')
+        $this->actingAs($admin)->get('/admin/responders')
             ->assertOk()
             ->assertSee('Pending Applications')
             ->assertSee('Applicant Ann')
-            ->assertSee('Current Creators')
+            ->assertSee('Current Responders')
             ->assertSee('Carl Creator')
             ->assertSee('Direct Invite');
     }
@@ -188,7 +188,7 @@ class AdminCreatorManagementTest extends TestCase
         $creator = User::factory()->create(['role' => UserRole::Creator, 'name' => 'C Answerer']);
         \App\Models\Question::factory()->answeredBy($creator)->create();
 
-        $this->actingAs($admin)->get('/admin/creators')
+        $this->actingAs($admin)->get('/admin/responders')
             ->assertOk()
             ->assertSee('1 answer');
     }

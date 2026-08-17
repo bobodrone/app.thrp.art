@@ -29,7 +29,7 @@ class CreatorDashboard extends Component
             'myClaimed'     => $myClaimed,
         ])
         ->layout('layouts.app')
-        ->title('Creator Dashboard — THRP');
+        ->title('Responder Dashboard — THRP');
     }
 
     public function claim($questionId): ?RedirectResponse

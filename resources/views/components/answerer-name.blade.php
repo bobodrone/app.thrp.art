@@ -8,7 +8,7 @@
     $creator = $answer?->author;
 
     // An anonymous answer never links, not even for admins who can see the real
-    // name: the href would carry the creator's id straight into the markup, and
+    // name: the href would carry the responder's id straight into the markup, and
     // that markup is one copy-paste away from a public view.
     //
     // The role check needs `role` on the eager load (`author:id,name,role`) —

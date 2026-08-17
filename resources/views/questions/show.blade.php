@@ -58,7 +58,7 @@
                 @endif
             </article>
 
-            {{-- Alternative answers from other creators, oldest first. --}}
+            {{-- Alternative answers from other responders, oldest first. --}}
             @if ($otherAnswers->isNotEmpty())
                 <section class="mt-8">
                     <h2 class="mb-4 font-body text-xs font-semibold uppercase tracking-wider text-soil-400">
@@ -79,7 +79,7 @@
                 </section>
             @endif
 
-            {{-- Creators who have not answered yet get a way in. --}}
+            {{-- Responders who have not answered yet get a way in. --}}
             @if ($question->isAnswerableBy(auth()->user()))
                 <div class="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-leaf-200 bg-leaf-100 px-4 py-3">
                     <p class="font-body text-sm text-leaf-700">Have a different take on this one?</p>

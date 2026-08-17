@@ -102,7 +102,7 @@ class CreatorQuestionDetail extends Component
             ),
         ])
         ->layout('layouts.app')
-        ->title('Question — Creator View — THRP');
+        ->title('Question — Responder View — THRP');
     }
 
     public function claim()

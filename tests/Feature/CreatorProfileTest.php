@@ -33,19 +33,19 @@ class CreatorProfileTest extends TestCase
     {
         $creator = User::factory()->creator()->create();
 
-        $this->actingAs($creator)->get('/creator/profile')->assertOk();
+        $this->actingAs($creator)->get('/responder/profile')->assertOk();
     }
 
     public function test_member_cannot_open_the_profile_page(): void
     {
         $member = User::factory()->create();
 
-        $this->actingAs($member)->get('/creator/profile')->assertForbidden();
+        $this->actingAs($member)->get('/responder/profile')->assertForbidden();
     }
 
     public function test_guest_is_redirected_to_login(): void
     {
-        $this->get('/creator/profile')->assertRedirect('/login');
+        $this->get('/responder/profile')->assertRedirect('/login');
     }
 
     public function test_profile_fields_are_saved(): void

@@ -6,16 +6,16 @@
 
         <div class="space-y-6">
 
-            {{-- ── Creator profile (creators & admins only) ─────────────── --}}
+            {{-- ── Responder profile (responders & admins only) ─────────── --}}
             @if ($user->isCreator())
                 <div class="rounded-2xl border border-leaf-200 bg-white p-6 shadow-sm">
-                    <h2 class="mb-1 font-display text-lg font-bold text-soil-900">Creator Profile</h2>
+                    <h2 class="mb-1 font-display text-lg font-bold text-soil-900">Responder Profile</h2>
                     <p class="mb-4 font-body text-sm text-soil-600">
                         Your picture, bio and links — plus whether your answers are posted anonymously.
                     </p>
                     <a href="{{ route('creator.profile') }}"
                         class="inline-block rounded-xl bg-leaf-600 px-4 py-2 font-body text-sm font-semibold text-white hover:bg-leaf-500 transition-colors">
-                        Edit creator profile
+                        Edit responder profile
                     </a>
                 </div>
             @endif

@@ -17,7 +17,7 @@ class UserRoleInvite extends Mailable
 
     public function __construct(public UserRole $role, public ?string $passwordResetUrl = null)
     {
-        $this->roleLabel = ucfirst($role->value);
+        $this->roleLabel = $role->label();
     }
 
     public function envelope(): Envelope

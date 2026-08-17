@@ -35,11 +35,11 @@ Route::get('/about', [AboutPageController::class, 'show'])->name('about');
 // Public question detail
 Route::get('/questions/{question}', [QuestionController::class, 'show'])->name('questions.show');
 
-// Public creator directory
-Route::get('/creators', \App\Livewire\CreatorsIndex::class)->name('creators.index');
-Route::get('/creators/{user}', [PublicCreatorController::class, 'show'])->name('creators.show');
+// Public responder directory
+Route::get('/responders', \App\Livewire\CreatorsIndex::class)->name('creators.index');
+Route::get('/responders/{user}', [PublicCreatorController::class, 'show'])->name('creators.show');
 
-// Public creator application
+// Public responder application
 Route::get('/apply', \App\Livewire\CreatorApplicationForm::class)->name('apply');
 
 // One-time admin bootstrap — public (self-disables once an admin exists)
@@ -62,8 +62,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/my-questions', [MyQuestionsController::class, 'index'])->name('my-questions');
 });
 
-// Creator area (creator or admin)
-Route::middleware(['auth', 'role:creator,admin'])->prefix('creator')->name('creator.')->group(function () {
+// Responder area (responder or admin). The stored role value is still 'creator'.
+Route::middleware(['auth', 'role:creator,admin'])->prefix('responder')->name('creator.')->group(function () {
     Route::get('/', \App\Livewire\CreatorDashboard::class)->name('dashboard');
     Route::get('/profile', \App\Livewire\CreatorProfile::class)->name('profile');
     Route::get('/answered', [CreatorAnsweredController::class, 'index'])->name('answered');
@@ -74,8 +74,26 @@ Route::middleware(['auth', 'role:creator,admin'])->prefix('creator')->name('crea
 // Admin area (built out in Phases 6–7 — stubs)
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/questions', \App\Livewire\AdminQuestionsTable::class)->name('questions');
-    Route::get('/creators', \App\Livewire\AdminCreatorManagement::class)->name('creators');
+    Route::get('/responders', \App\Livewire\AdminCreatorManagement::class)->name('creators');
     Route::get('/users', \App\Livewire\AdminUserManagement::class)->name('users');
 });
+
+// Legacy /creator(s) URLs, kept alive for bookmarks and inbound links after the
+// rename to "responder". Declared last so they never shadow a real route.
+
+Route::redirect('/creators', '/responders', 301);
+Route::redirect('/creators/{user}', '/responders/{user}', 301);
+Route::redirect('/admin/creators', '/admin/responders', 301);
+Route::redirect('/creator', '/responder', 301);
+
+// Everything under the old answerer-area prefix, split by verb rather than
+// declared with Route::redirect(): a 301 tells the client to re-send a POST as
+// a GET, which would drop the body. 308 keeps the method intact. The claim
+// button is the only form that posts here, and only a page left open across
+// the deploy can still aim at the old path.
+Route::get('/creator/{path}', fn (string $path) => redirect('/responder/' . $path, 301))
+    ->where('path', '.*');
+Route::post('/creator/{path}', fn (string $path) => redirect('/responder/' . $path, 308))
+    ->where('path', '.*');
 
 require __DIR__ . '/auth.php';

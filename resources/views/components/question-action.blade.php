@@ -20,6 +20,6 @@
     {{-- Already theirs — straight back to the answer form. --}}
     <a href="{{ route('creator.questions.show', $question) }}" @click.stop class="{{ $classes }}">Answer →</a>
 @elseif ($question->isAnswerableBy($user))
-    {{-- Answered by someone else, and this creator has not weighed in yet. --}}
+    {{-- Answered by someone else, and this responder has not weighed in yet. --}}
     <a href="{{ route('creator.questions.show', $question) }}" @click.stop class="{{ $classes }}">Add your answer →</a>
 @endif

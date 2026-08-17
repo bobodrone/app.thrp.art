@@ -6,16 +6,16 @@
     $navLinks = [];
     if ($user) {
         if (in_array($user->role->value, [UserRole::Creator->value, UserRole::Admin->value])) {
-            $navLinks[] = ['label' => 'Creator Dashboard', 'url' => route('creator.dashboard')];
+            $navLinks[] = ['label' => 'Responder Dashboard', 'url' => route('creator.dashboard')];
         }
         if ($user->role === UserRole::Admin) {
             $navLinks[] = ['label' => 'Questions admin', 'url' => route('admin.questions')];
-            $navLinks[] = ['label' => 'Creators admin', 'url' => route('admin.creators')];
+            $navLinks[] = ['label' => 'Responders admin', 'url' => route('admin.creators')];
             $navLinks[] = ['label' => 'Admins admin', 'url' => route('admin.users')];
         }
         $navLinks[] = ['label' => 'My Questions', 'url' => route('my-questions')];
         if ($user->role === UserRole::Member) {
-            $navLinks[] = ['label' => 'Become a creator', 'url' => route('apply')];
+            $navLinks[] = ['label' => 'Become a responder', 'url' => route('apply')];
         }
     }
 @endphp
@@ -34,7 +34,7 @@
         <!-- Desktop links -->
         <div class="hidden md:flex items-center gap-5 text-sm font-medium" x-data="{ open: false }" @click.away="open = false">
             <a href="https://thrp.art" target="_blank" class="text-sun-400 hover:text-white transition-colors">What’s it all about?</a>
-            <a href="{{ route('creators.index') }}" class="text-leaf-100 hover:text-white transition-colors">Creators</a>
+            <a href="{{ route('creators.index') }}" class="text-leaf-100 hover:text-white transition-colors">Responders</a>
             @if ($user)
                 @foreach ($navLinks as $link)
                     <a href="{{ $link['url'] }}" class="text-leaf-100 hover:text-white transition-colors">{{ $link['label'] }}</a>
@@ -58,7 +58,7 @@
                         class="absolute right-0 top-full z-10 mt-1.5 w-44 rounded-xl border border-leaf-600 bg-leaf-800 py-1 shadow-xl"
                     >
                         @if ($user->isCreator())
-                            <a href="{{ route('creator.profile') }}" class="block px-4 py-2.5 text-sm text-leaf-100 hover:bg-leaf-700 hover:text-white transition-colors">Creator profile</a>
+                            <a href="{{ route('creator.profile') }}" class="block px-4 py-2.5 text-sm text-leaf-100 hover:bg-leaf-700 hover:text-white transition-colors">Responder profile</a>
                         @endif
                         <a href="{{ route('settings') }}" class="block px-4 py-2.5 text-sm text-leaf-100 hover:bg-leaf-700 hover:text-white transition-colors">Settings</a>
                         <form method="post" action="{{ route('logout') }}">
@@ -68,7 +68,7 @@
                     </div>
                 </div>
             @else
-                <a href="{{ route('apply') }}" class="text-leaf-100 hover:text-white transition-colors">Become a creator</a>
+                <a href="{{ route('apply') }}" class="text-leaf-100 hover:text-white transition-colors">Become a responder</a>
                 <a href="{{ route('register') }}" class="text-leaf-100 hover:text-white transition-colors">Register</a>
                 <a href="{{ route('login') }}" class="rounded-lg bg-sun-500 px-4 py-2 text-soil-900 font-semibold hover:bg-sun-400 transition-colors">Sign in</a>
             @endif
@@ -101,7 +101,7 @@
     >
         <div class="flex flex-col text-sm font-medium">
             <a href="https://thrp.art" target="_blank" class="py-2.5 text-sun-400 hover:text-white transition-colors">What’s it all about?</a>
-            <a href="{{ route('creators.index') }}" class="py-2.5 text-leaf-100 hover:text-white transition-colors">Creators</a>
+            <a href="{{ route('creators.index') }}" class="py-2.5 text-leaf-100 hover:text-white transition-colors">Responders</a>
             @if ($user)
                 @foreach ($navLinks as $link)
                     <a href="{{ $link['url'] }}" class="py-2.5 text-leaf-100 hover:text-white transition-colors">{{ $link['label'] }}</a>
@@ -111,7 +111,7 @@
 
                 <span class="py-1 text-xs uppercase tracking-wider text-leaf-300">{{ $user->name }}</span>
                 @if ($user->isCreator())
-                    <a href="{{ route('creator.profile') }}" class="py-2.5 text-leaf-100 hover:text-white transition-colors">Creator profile</a>
+                    <a href="{{ route('creator.profile') }}" class="py-2.5 text-leaf-100 hover:text-white transition-colors">Responder profile</a>
                 @endif
                 <a href="{{ route('settings') }}" class="py-2.5 text-leaf-100 hover:text-white transition-colors">Settings</a>
                 <form method="post" action="{{ route('logout') }}">
@@ -119,7 +119,7 @@
                     <button type="submit" class="w-full py-2.5 text-left text-leaf-100 hover:text-white transition-colors">Sign out</button>
                 </form>
             @else
-                <a href="{{ route('apply') }}" class="py-2.5 text-leaf-100 hover:text-white transition-colors">Become a creator</a>
+                <a href="{{ route('apply') }}" class="py-2.5 text-leaf-100 hover:text-white transition-colors">Become a responder</a>
                 <a href="{{ route('register') }}" class="py-2.5 text-leaf-100 hover:text-white transition-colors">Register</a>
                 <a href="{{ route('login') }}" class="mt-2 rounded-lg bg-sun-500 px-4 py-2.5 text-center text-soil-900 font-semibold hover:bg-sun-400 transition-colors">Sign in</a>
             @endif

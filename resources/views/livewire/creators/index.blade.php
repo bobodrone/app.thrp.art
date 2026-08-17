@@ -6,7 +6,7 @@
 @endphp
 
 <div class="mx-auto max-w-3xl px-4 py-10">
-    <h1 class="mb-1 font-display text-3xl font-black text-soil-900">Creators</h1>
+    <h1 class="mb-1 font-display text-3xl font-black text-soil-900">Responders</h1>
     <p class="mb-6 font-body text-sm text-soil-600">The people who answer your questions.</p>
 
     {{-- ── Type-ahead search ────────────────────────────────────────── --}}
@@ -15,7 +15,7 @@
             type="search"
             wire:model.live.debounce.300ms="search"
             placeholder="Search by name…"
-            aria-label="Search creators by name"
+            aria-label="Search responders by name"
             class="w-full rounded-xl border-soil-300 pl-10 font-body text-sm shadow-sm"
         />
         <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-soil-400"
@@ -30,12 +30,12 @@
 
     <div class="overflow-hidden rounded-2xl border border-leaf-200 bg-white shadow-sm">
         <table class="w-full text-left">
-            <caption class="sr-only">Creators, with the number of answers each has published</caption>
+            <caption class="sr-only">Responders, with the number of answers each has published</caption>
             <thead class="border-b border-leaf-200 bg-soil-50">
                 <tr class="font-body text-xs font-semibold uppercase tracking-wide text-soil-600">
                     <th scope="col" class="px-5 py-3" aria-sort="{{ $sort === 'name' ? ($direction === 'asc' ? 'ascending' : 'descending') : 'none' }}">
                         <button type="button" wire:click="sortBy('name')" class="hover:text-leaf-600">
-                            Creator{{ $arrow('name') }}
+                            Responder{{ $arrow('name') }}
                         </button>
                     </th>
                     <th scope="col" class="px-5 py-3 text-right" aria-sort="{{ $sort === 'answers' ? ($direction === 'asc' ? 'ascending' : 'descending') : 'none' }}">
@@ -80,9 +80,9 @@
                     <tr>
                         <td colspan="3" class="px-5 py-10 text-center font-body text-sm text-soil-500">
                             @if (trim($search) !== '')
-                                No creator matches “{{ $search }}”.
+                                No responder matches “{{ $search }}”.
                             @else
-                                No creators yet.
+                                No responders yet.
                             @endif
                         </td>
                     </tr>

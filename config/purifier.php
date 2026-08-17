@@ -38,8 +38,8 @@ return [
             'AutoFormat.RemoveEmpty'   => false,
             'Attr.AllowedFrameTargets' => ['_blank'],
         ],
-        // Creator bios. Deliberately narrower than 'markdown': no headings
-        // (one would out-shout the creator's own name right above it), no
+        // Responder bios. Deliberately narrower than 'markdown': no headings
+        // (one would out-shout the responder's own name right above it), no
         // images, and no block quotes or rules — a bio sits in a card and must
         // not be able to break its layout. Disallowed tags are dropped but
         // their text is kept, so a typed "# Heading" degrades to plain text.

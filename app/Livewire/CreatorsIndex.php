@@ -81,6 +81,6 @@ class CreatorsIndex extends Component
             'direction' => $direction,
         ])
         ->layout('layouts.app')
-        ->title('Creators — THRP');
+        ->title('Responders — THRP');
     }
 }

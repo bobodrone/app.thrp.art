@@ -8,10 +8,10 @@
             <x-leaf size="70" color="#1A5C38" :rotate="-20" />
         </div>
         <div class="relative z-10 mx-auto max-w-2xl">
-            <p class="font-body mb-3 text-xs font-semibold uppercase tracking-[0.3em] text-leaf-700">Creator Application</p>
-            <h1 class="font-display text-5xl font-black leading-tight text-soil-900">Become a<br>Creator.</h1>
+            <p class="font-body mb-3 text-xs font-semibold uppercase tracking-[0.3em] text-leaf-700">Responder Application</p>
+            <h1 class="font-display text-5xl font-black leading-tight text-soil-900">Become a<br>Responder.</h1>
             <p class="font-body mt-4 max-w-md text-soil-700">
-                Creators answer questions submitted by the community. Tell us about yourself.
+                Responders answer questions submitted by the community. Tell us about yourself.
             </p>
         </div>
     </div>
@@ -51,7 +51,7 @@
                         </div>
                         <div>
                             <label for="message" class="mb-1 block font-body text-sm font-medium text-soil-700">
-                                Why do you want to be a creator?
+                                Why do you want to be a responder?
                                 <span class="ml-1 font-normal text-soil-400">(20–500 characters)</span>
                             </label>
                             <textarea id="message" required minlength="20" maxlength="500" rows="5"

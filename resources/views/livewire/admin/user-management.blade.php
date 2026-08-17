@@ -2,7 +2,7 @@
     <div class="mb-8 flex items-center justify-between">
         <h1 class="font-display text-2xl font-bold text-soil-900">Manage Admins</h1>
         <div class="flex gap-3 font-body text-sm">
-            <a href="{{ route('admin.creators') }}" class="font-semibold text-leaf-600 hover:underline">Creators →</a>
+            <a href="{{ route('admin.creators') }}" class="font-semibold text-leaf-600 hover:underline">Responders →</a>
             <a href="{{ route('admin.questions') }}" class="font-semibold text-leaf-600 hover:underline">Questions →</a>
         </div>
     </div>

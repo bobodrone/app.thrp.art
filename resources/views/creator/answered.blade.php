@@ -18,7 +18,7 @@
             <div class="divide-y divide-soil-200 rounded-2xl border border-leaf-200 bg-white shadow-sm">
                 @foreach ($answered as $q)
                     @php
-                        // Answerers and admins get the creator view, which carries the edit form.
+                        // Answerers and admins get the responder view, which carries the edit form.
                         $canEdit = $q->isAnswerEditableBy(auth()->user());
                     @endphp
                     <a href="{{ $canEdit ? route('creator.questions.show', $q) : route('questions.show', $q) }}"

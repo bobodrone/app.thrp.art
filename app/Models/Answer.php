@@ -29,8 +29,8 @@ class Answer extends Model
         'question_id', 'created_by', 'body', 'image_path', 'anonymously', 'published_at',
     ];
 
-    /** Shown in place of the creator's nickname on an anonymous answer. */
-    public const ANONYMOUS_AUTHOR = 'a THRP creator';
+    /** Shown in place of the responder's nickname on an anonymous answer. */
+    public const ANONYMOUS_AUTHOR = 'a THRP responder';
 
     /**
      * Whether this is the question's main answer rather than an alternative.

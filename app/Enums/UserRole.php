@@ -22,8 +22,16 @@ enum UserRole: string
         };
     }
 
+    /**
+     * Display name for the UI. Deliberately not derived from the stored value:
+     * the 'creator' role is presented as "Responder".
+     */
     public function label(): string
     {
-        return ucfirst($this->value);
+        return match ($this) {
+            self::Member  => 'Member',
+            self::Creator => 'Responder',
+            self::Admin   => 'Admin',
+        };
     }
 }

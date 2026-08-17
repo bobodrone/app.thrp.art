@@ -33,7 +33,7 @@ class CreatorsDirectoryTest extends TestCase
         $creator = User::factory()->creator()->create(['name' => 'Ada Gardener']);
         $member  = User::factory()->create(['name' => 'Ordinary Member']);
 
-        $this->get('/creators')
+        $this->get('/responders')
             ->assertOk()
             ->assertSee('Ada Gardener')
             ->assertDontSee('Ordinary Member')
@@ -44,7 +44,7 @@ class CreatorsDirectoryTest extends TestCase
     {
         $admin = User::factory()->admin()->create(['name' => 'Staff Person']);
 
-        $this->get('/creators')->assertOk()->assertSee($admin->name);
+        $this->get('/responders')->assertOk()->assertSee($admin->name);
     }
 
     public function test_default_order_is_nickname_ascending(): void
@@ -96,7 +96,7 @@ class CreatorsDirectoryTest extends TestCase
             ->assertSee('Cecilia Cactus')
             ->assertDontSee('Bertil Blomma')
             ->set('search', 'nobody here')
-            ->assertSee('No creator matches');
+            ->assertSee('No responder matches');
     }
 
     public function test_answer_count_only_includes_publicly_credited_answers(): void

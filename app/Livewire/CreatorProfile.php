@@ -59,7 +59,7 @@ class CreatorProfile extends Component
             'canAddLink' => count($this->socialLinks) < self::MAX_LINKS,
         ])
         ->layout('layouts.app')
-        ->title('Creator Profile — THRP');
+        ->title('Responder Profile — THRP');
     }
 
     public function updatedAvatar(): void

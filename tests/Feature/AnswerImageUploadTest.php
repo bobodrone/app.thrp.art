@@ -232,6 +232,6 @@ class AnswerImageUploadTest extends TestCase
         $member = User::factory()->create(['role' => UserRole::Member]);
         $q      = Question::factory()->create(['asked_by' => $member->id]);
 
-        $this->actingAs($member)->get("/creator/questions/{$q->id}")->assertForbidden();
+        $this->actingAs($member)->get("/responder/questions/{$q->id}")->assertForbidden();
     }
 }

@@ -1,9 +1,9 @@
 <x-app-layout>
-    <x-slot name="title">{{ $creator->name }} — Creator — THRP</x-slot>
+    <x-slot name="title">{{ $creator->name }} — Responder — THRP</x-slot>
 
     <div class="mx-auto max-w-2xl px-4 py-10">
         <a href="{{ route('creators.index') }}" class="mb-6 inline-block font-body text-sm font-semibold text-leaf-600 hover:underline">
-            ← All creators
+            ← All responders
         </a>
 
         <div class="rounded-2xl border border-leaf-200 bg-white p-8 shadow-sm">
@@ -51,7 +51,7 @@
 
             @if (! $creator->bio && ! $creator->publicSocialLinks())
                 <p class="mt-8 border-t border-leaf-200 pt-6 font-body text-sm text-soil-400">
-                    This creator hasn't filled in their profile yet.
+                    This responder hasn't filled in their profile yet.
                 </p>
             @endif
         </div>

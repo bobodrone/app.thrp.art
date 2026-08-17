@@ -20,14 +20,14 @@ class DatabaseSeeder extends Seeder
             'role'  => UserRole::Admin,
         ]);
 
-        // 2 creators
+        // 2 responders
         $creatorA = User::factory()->create([
-            'name'  => 'Carl Creator',
+            'name'  => 'Carl Responder',
             'email' => 'creator@example.com',
             'role'  => UserRole::Creator,
         ]);
         $creatorB = User::factory()->create([
-            'name'  => 'Clea Creator',
+            'name'  => 'Clea Responder',
             'email' => 'creator2@example.com',
             'role'  => UserRole::Creator,
         ]);

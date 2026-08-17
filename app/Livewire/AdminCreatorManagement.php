@@ -73,7 +73,7 @@ class AdminCreatorManagement extends Component
         $inviter->invite($this->inviteEmail, $this->inviteName, UserRole::Creator);
 
         $this->reset(['inviteName', 'inviteEmail']);
-        session()->flash('admin-creators-ok', 'Creator invited.');
+        session()->flash('admin-creators-ok', 'Responder invited.');
     }
 
     public function revoke(int $userId): void
@@ -82,7 +82,7 @@ class AdminCreatorManagement extends Component
             ->where('role', UserRole::Creator)
             ->update(['role' => UserRole::Member]);
 
-        session()->flash('admin-creators-ok', 'Creator access revoked.');
+        session()->flash('admin-creators-ok', 'Responder access revoked.');
     }
 
     public function render()
@@ -109,6 +109,6 @@ class AdminCreatorManagement extends Component
             'answeredCounts'  => $answeredCounts,
         ])
         ->layout('layouts.app')
-        ->title('Manage Creators — Admin — THRP');
+        ->title('Manage Responders — Admin — THRP');
     }
 }

@@ -31,7 +31,7 @@ class NotifyCreatorsOfNewQuestion implements ShouldQueue
 
         foreach ($creators as $creator) {
             Mail::to($creator)->send(new NewQuestionNotification(
-                creatorName: $creator->name ?? 'Creator',
+                creatorName: $creator->name ?? 'Responder',
                 questionPreview: $preview,
                 questionUrl: $url,
             ));

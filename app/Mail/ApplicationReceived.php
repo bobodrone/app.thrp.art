@@ -21,7 +21,7 @@ class ApplicationReceived extends Mailable
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: 'New creator application from ' . $this->applicantName . ' — THRP');
+        return new Envelope(subject: 'New responder application from ' . $this->applicantName . ' — THRP');
     }
 
     public function content(): Content

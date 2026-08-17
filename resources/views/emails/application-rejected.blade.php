@@ -5,7 +5,7 @@
   <h1 style="font-size:22px;font-weight:700;margin:0 0 12px;">Thanks for applying</h1>
   <p style="color:#444;line-height:1.6;">Hi {{ $name }},</p>
   <p style="color:#444;line-height:1.6;">
-    Thank you for your interest in becoming a creator on THRP. After reviewing your application,
+    Thank you for your interest in becoming a responder on THRP. After reviewing your application,
     we&rsquo;re not able to move forward at this time.
   </p>
   <p style="color:#444;line-height:1.6;">We appreciate your interest and wish you all the best.</p>

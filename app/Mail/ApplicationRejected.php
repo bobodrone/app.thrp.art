@@ -16,7 +16,7 @@ class ApplicationRejected extends Mailable
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: 'Your THRP creator application');
+        return new Envelope(subject: 'Your THRP responder application');
     }
 
     public function content(): Content

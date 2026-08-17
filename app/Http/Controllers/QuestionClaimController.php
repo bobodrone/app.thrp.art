@@ -11,12 +11,12 @@ class QuestionClaimController extends Controller
 {
     /**
      * Claim from anywhere a question is shown (home feed, question page) and
-     * land on the creator view, where the answer gets written.
+     * land on the responder view, where the answer gets written.
      */
     public function store(Request $request, Question $question): RedirectResponse
     {
         if (! $question->claimBy($request->user())) {
-            // Lost the race — the creator view explains who holds it now.
+            // Lost the race — the responder view explains who holds it now.
             return Redirect::route('creator.questions.show', $question)
                 ->with('claim_error', 'Question has already been claimed by someone else.');
         }

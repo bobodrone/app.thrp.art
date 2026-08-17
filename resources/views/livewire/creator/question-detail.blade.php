@@ -1,5 +1,5 @@
 <div class="mx-auto max-w-3xl px-4 py-10">
-    <a href="{{ route('creator.dashboard') }}" class="mb-6 inline-block font-body text-sm font-semibold text-leaf-600 hover:underline">← Creator Dashboard</a>
+    <a href="{{ route('creator.dashboard') }}" class="mb-6 inline-block font-body text-sm font-semibold text-leaf-600 hover:underline">← Responder Dashboard</a>
 
     @if (session('claim_error'))
         <p class="mb-4 rounded-xl border border-poppy-100 bg-poppy-100 px-4 py-3 font-body text-sm text-poppy-600">{{ session('claim_error') }}</p>
@@ -91,7 +91,7 @@
     {{-- State C: claimed by someone else --}}
     @elseif ($claimedByOther)
         <div class="mt-6 rounded-xl bg-sky-100 px-5 py-4 font-body text-sm text-sky-600">
-            This question is currently being answered by another creator.
+            This question is currently being answered by another responder.
         </div>
 
     {{-- State D: answered --}}
@@ -132,7 +132,7 @@
         </div>
     @endif
 
-    {{-- Alternative answers from other creators --}}
+    {{-- Alternative answers from other responders --}}
     @if ($otherAnswers->isNotEmpty())
         <h2 class="mb-3 mt-8 font-body text-xs font-semibold uppercase tracking-wider text-soil-400">
             @if ($question->hasVisibleAnswer())
@@ -224,7 +224,7 @@
         </div>
     @endif
 
-    {{-- Any creator without an answer here may add one alongside the main one --}}
+    {{-- Any responder without an answer here may add one alongside the main one --}}
     @if ($canAddAlternative)
         <div class="mt-8 rounded-2xl border border-leaf-200 bg-white p-8 shadow-sm">
             <p class="mb-1 font-body text-sm font-medium text-soil-700">Add your answer</p>

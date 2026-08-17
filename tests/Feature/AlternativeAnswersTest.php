@@ -231,7 +231,7 @@ class AlternativeAnswersTest extends TestCase
         $theirs = $this->answered($main);
         $theirs->update(['content' => 'Not answered by me at all']);
 
-        $this->actingAs($other)->get('/creator/answered')
+        $this->actingAs($other)->get('/responder/answered')
             ->assertOk()
             ->assertSee('Answered as an alternative')
             ->assertDontSee('Not answered by me at all');

@@ -1,5 +1,5 @@
 <div class="mx-auto max-w-2xl px-4 py-10">
-    <h1 class="mb-1 font-display text-3xl font-black text-soil-900">Creator Profile</h1>
+    <h1 class="mb-1 font-display text-3xl font-black text-soil-900">Responder Profile</h1>
     <p class="mb-8 font-body text-sm text-soil-600">
         This is what visitors see on your
         <a href="{{ route('creators.show', $user) }}" class="font-medium text-leaf-600 hover:underline">public profile</a>.

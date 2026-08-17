@@ -1,6 +1,6 @@
 <div class="mx-auto max-w-4xl px-4 py-10">
     <div class="mb-8 flex items-center justify-between">
-        <h1 class="font-display text-2xl font-bold text-soil-900">Manage Creators</h1>
+        <h1 class="font-display text-2xl font-bold text-soil-900">Manage Responders</h1>
         <div class="flex gap-3 font-body text-sm">
             <a href="{{ route('admin.users') }}" class="font-semibold text-leaf-600 hover:underline">Admins →</a>
             <a href="{{ route('admin.questions') }}" class="font-semibold text-leaf-600 hover:underline">Questions →</a>
@@ -87,14 +87,14 @@
         </div>
     </section>
 
-    {{-- ── Current creators ──────────────────────────────────────────────────────--}}
+    {{-- ── Current responders ────────────────────────────────────────────────────--}}
     <section>
         <h2 class="mb-3 font-body text-sm font-semibold uppercase tracking-wide text-soil-600">
-            Current Creators ({{ $creators->count() }})
+            Current Responders ({{ $creators->count() }})
         </h2>
 
         @if ($creators->isEmpty())
-            <p class="font-body text-sm text-soil-500">No creators yet.</p>
+            <p class="font-body text-sm text-soil-500">No responders yet.</p>
         @else
             <div class="divide-y divide-soil-200 rounded-2xl border border-leaf-200 bg-white shadow-sm">
                 @foreach ($creators as $c)
