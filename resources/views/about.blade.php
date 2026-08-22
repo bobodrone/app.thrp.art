@@ -27,7 +27,7 @@
 
             <h2 class="mb-1 font-display text-2xl font-black text-soil-900">CREDITS</h1>
             <ul class="list-disc">
-              <li><strong>Founder:</strong> Founder: Robin Vincent - https://robinvincent.net/</li>
+              <li><strong>Founder:</strong> Founder: Robin Vincent - <a href="https://robinvincent.net/" class="underline underline-offset-2" target="_blank">https://robinvincent.net/</a></li>
               <li><strong>Design and programming:</strong> Pennache</li>
               <li><strong>Join us:</strong> This is intended as a community project that welcomes input, change and evolution from anyone willing to offer their time and talents.</li>
             </ul>
