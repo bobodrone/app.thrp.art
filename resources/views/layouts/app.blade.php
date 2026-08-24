@@ -34,5 +34,8 @@
             </main>
         </div>
         @livewireScripts
+
+        {{-- resources/views/layouts/app.blade.php --}}
+        @include('cookie-consent::index')
     </body>
 </html>
