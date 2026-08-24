@@ -55,6 +55,8 @@ rsync $test -avzh \
   --delete \
   ./ "${WEB_RELEASE_DIR}/"
 
-# config:clear runs first: bootstrap/cache is never rsynced, so a config cache
-# left there would hide newly added config files (e.g. config/uploads.php).
-"${SSH_CMD[@]}" $WEB_USER_HOST "cd $WEB_BASE_PATH && php8.4-cli artisan config:clear && php8.4-cli artisan migrate --force && php8.4-cli artisan storage:link && php8.4-cli artisan view:clear && php8.4-cli artisan cache:clear"
+# bootstrap/cache is never rsynced, so the package manifest (packages.php) on
+# the server can go stale when new packages are added locally. Rebuild it from
+# vendor/composer/installed.json before anything else, then clear caches that
+# could hide freshly deployed config/views.
+"${SSH_CMD[@]}" $WEB_USER_HOST "cd $WEB_BASE_PATH && php8.4-cli artisan package:discover && php8.4-cli artisan config:clear && php8.4-cli artisan migrate --force && php8.4-cli artisan storage:link && php8.4-cli artisan view:clear && php8.4-cli artisan cache:clear"
