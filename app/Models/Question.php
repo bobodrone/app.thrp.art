@@ -275,6 +275,26 @@ class Question extends Model
     }
 
     /**
+     * Every visible answer, main one first and the alternatives behind it in
+     * publication order — the reading order for crediting responders. Reads the
+     * loaded `answers` relation, so eager-load it when rendering a list.
+     *
+     * A hidden main answer drops out with the rest: `answers` excludes
+     * soft-deleted rows, so the question credits nobody it no longer shows.
+     * An answer whose author has been deleted drops out too — there is no
+     * longer anyone to name.
+     */
+    public function creditedAnswers(): Collection
+    {
+        $others  = $this->otherAnswers();
+        $primary = $this->answers->firstWhere('id', $this->primary_answer_id);
+
+        return ($primary === null ? $others : $others->prepend($primary))
+            ->filter(fn (Answer $answer) => $answer->author !== null)
+            ->values();
+    }
+
+    /**
      * How the main answer's creator should be credited to $viewer.
      */
     public function answererNameFor(?User $viewer): ?string

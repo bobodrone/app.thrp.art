@@ -101,10 +101,13 @@
                             <td class="px-4 py-3 text-soil-600">{{ $q->asker?->name ?? '—' }}</td>
                             <td class="px-4 py-3 text-soil-600">{{ $q->claimer?->name ?? '—' }}</td>
                             <td class="px-4 py-3 text-soil-600">
-                                @if (! $q->primaryAnswer?->author)
+                                @php $credited = $q->creditedAnswers(); @endphp
+                                @if ($credited->isEmpty())
                                     —
                                 @else
-                                    <x-answerer-name :answer="$q->primaryAnswer" :viewer="auth()->user()" />
+                                    @foreach ($credited as $answer)
+                                        <x-answerer-name :answer="$answer" :viewer="auth()->user()" />{{ $loop->last ? '' : ', ' }}
+                                    @endforeach
                                 @endif
                             </td>
                             <td class="px-4 py-3 tabular-nums text-soil-400">{{ format_date($q->created_at) }}</td>

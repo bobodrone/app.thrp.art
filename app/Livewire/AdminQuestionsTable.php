@@ -148,7 +148,9 @@ class AdminQuestionsTable extends Component
 
         $questions = Question::query()
             ->when($this->showDeleted, fn ($q) => $q->withTrashed())
-            ->with(['asker:id,name', 'claimer:id,name', 'primaryAnswer.author:id,name,role'])
+            // Every answer comes along: the table credits all of a question's
+            // responders, not only the one holding the main slot.
+            ->with(['asker:id,name', 'claimer:id,name', 'primaryAnswer.author:id,name,role', 'answers.author:id,name,role'])
             ->withCount('answers')
             ->when(in_array($this->statusFilter, $validStatuses, true), function ($q) {
                 $q->where('status', $this->statusFilter);

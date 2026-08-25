@@ -1,11 +1,11 @@
 ---
 id: TASK-1
 title: Add footer with credits and legal info (GDPR etc)
-status: In Progress
+status: Done
 assignee:
   - Fredric
 created_date: '2026-07-27 06:16'
-updated_date: '2026-07-27 06:43'
+updated_date: '2026-08-25 15:14'
 labels:
   - GDPR
   - CREDITS
@@ -13,7 +13,7 @@ labels:
 dependencies: []
 priority: medium
 type: task
-ordinal: 1000
+ordinal: 1500
 ---
 
 ## Description

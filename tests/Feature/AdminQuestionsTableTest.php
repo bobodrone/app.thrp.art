@@ -8,6 +8,7 @@ use App\Livewire\AdminQuestionsTable;
 use App\Models\Question;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -351,5 +352,144 @@ class AdminQuestionsTableTest extends TestCase
         $response->assertSee('Carl');
         $response->assertSee('Clea');
         $response->assertSee(format_date($q->fresh()->created_at));
+    }
+
+    public function test_answered_by_credits_every_responder_in_publication_order(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $main  = User::factory()->creator()->create(['name' => 'Prima Responder']);
+        // Published later than Zola, so alphabetical order would put it first —
+        // it must not.
+        $late  = User::factory()->creator()->create(['name' => 'Alta Responder']);
+        $early = User::factory()->creator()->create(['name' => 'Zola Responder']);
+
+        Question::factory()
+            ->answeredBy($main)
+            ->withAlternativeFrom($early, null, ['published_at' => now()->subMinutes(30)])
+            ->withAlternativeFrom($late, null, ['published_at' => now()->subMinutes(10)])
+            ->create(['content' => 'A much-answered question']);
+
+        $response = $this->actingAs($admin)->get('/admin/questions');
+
+        $this->assertStringContainsString(
+            'Prima Responder, Zola Responder, Alta Responder',
+            $this->visibleText($response->getContent()),
+        );
+    }
+
+    /**
+     * The page's rendered text with markup, Livewire's block comments and
+     * layout whitespace taken out — what an admin actually reads in a cell.
+     */
+    private function visibleText(string $html): string
+    {
+        $text = preg_replace('/<!--.*?-->/s', '', $html);
+        $text = preg_replace('/\s+/', ' ', strip_tags($text));
+
+        return preg_replace('/\s+([,.])/', '$1', $text);
+    }
+
+    public function test_answered_by_shows_a_dash_when_nobody_has_answered(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $creator = User::factory()->creator()->create(['name' => 'Unused Responder']);
+        Question::factory()->claimedBy($creator)->create(['content' => 'Still being written']);
+
+        Livewire::actingAs($admin)
+            ->test(AdminQuestionsTable::class)
+            ->assertSee('—');
+
+        $this->assertTrue(
+            Question::where('content', 'Still being written')->first()->load('answers')->creditedAnswers()->isEmpty(),
+        );
+    }
+
+    public function test_answered_by_leaves_out_hidden_answers(): void
+    {
+        $admin  = User::factory()->admin()->create();
+        $main   = User::factory()->creator()->create(['name' => 'Kept Responder']);
+        $pulled = User::factory()->creator()->create(['name' => 'Pulled Responder']);
+
+        $q = Question::factory()
+            ->answeredBy($main)
+            ->withAlternativeFrom($pulled)
+            ->create(['content' => 'One answer gets removed']);
+
+        $q->load('answers')->removeAnswer($q->answers->firstWhere('created_by', $pulled->id));
+
+        $response = $this->actingAs($admin)->get('/admin/questions');
+
+        $response->assertSee('Kept Responder');
+        $response->assertDontSee('Pulled Responder');
+    }
+
+    public function test_answered_by_credits_alternatives_after_the_main_answer_is_removed(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $main  = User::factory()->creator()->create(['name' => 'Removed Responder']);
+        $alt   = User::factory()->creator()->create(['name' => 'Surviving Responder']);
+
+        $q = Question::factory()
+            ->answeredBy($main)
+            ->withAlternativeFrom($alt)
+            ->create(['content' => 'The main answer gets pulled']);
+
+        // Reopens the question and clears the claim, so the removed responder is
+        // no longer named anywhere on the row.
+        $q->load('answers')->removeAnswer($q->primaryAnswer);
+
+        $response = $this->actingAs($admin)->get('/admin/questions');
+
+        $response->assertSee('Surviving Responder');
+        $response->assertDontSee('Removed Responder');
+    }
+
+    public function test_answered_by_shows_admins_the_name_behind_an_anonymous_alternative(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $main  = User::factory()->creator()->create(['name' => 'Named Responder']);
+        $shy   = User::factory()->creator()->create(['name' => 'Shy Responder', 'posts_anonymously' => true]);
+
+        Question::factory()
+            ->answeredBy($main)
+            ->withAlternativeFrom($shy)
+            ->create(['content' => 'One responder stays anonymous']);
+
+        $response = $this->actingAs($admin)->get('/admin/questions');
+
+        $response->assertSee('Named Responder');
+        // Admins see through anonymity, but the name still must not be a link:
+        // the href would carry the responder's id into copy-pasteable markup.
+        $response->assertSee('Shy Responder');
+        $response->assertDontSee('>Shy Responder</a>', false);
+    }
+
+    public function test_crediting_every_responder_adds_no_per_row_queries(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $count = function (int $questions) use ($admin): int {
+            Question::query()->forceDelete();
+
+            for ($i = 0; $i < $questions; $i++) {
+                Question::factory()
+                    ->answeredBy(User::factory()->creator()->create())
+                    ->withAlternativeFrom(User::factory()->creator()->create())
+                    ->withAlternativeFrom(User::factory()->creator()->create())
+                    ->create();
+            }
+
+            DB::flushQueryLog();
+            DB::enableQueryLog();
+
+            Livewire::actingAs($admin)->test(AdminQuestionsTable::class);
+
+            $queries = count(DB::getQueryLog());
+            DB::disableQueryLog();
+
+            return $queries;
+        };
+
+        $this->assertSame($count(1), $count(5));
     }
 }
