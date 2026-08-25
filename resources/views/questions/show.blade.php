@@ -9,9 +9,14 @@
             </a>
 
             <article class="rounded-2xl bg-white p-8 shadow-lg">
-                <div class="mb-6 flex items-center justify-between">
-                    <x-status-badge :status="$question->status" />
-                    <span class="font-body text-xs text-soil-400">{{ $question->created_at->diffForHumans() }}</span>
+                <div class="mb-6 flex items-center justify-between gap-3">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <x-status-badge :status="$question->status" />
+                        @if ($question->isHidden())
+                            <x-hidden-badge />
+                        @endif
+                    </div>
+                    <span class="shrink-0 font-body text-xs text-soil-400">{{ $question->created_at->diffForHumans() }}</span>
                 </div>
 
                 <h1 class="font-display mb-3 text-2xl font-bold leading-snug text-soil-900">
@@ -24,7 +29,9 @@
                     </p>
                 @endif
 
-                @if ($question->isClaimableBy(auth()->user()))
+                @if ($question->isHidden())
+                    <x-hidden-notice :question="$question" class="mt-6" />
+                @elseif ($question->isClaimableBy(auth()->user()))
                     <div class="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-leaf-200 bg-leaf-100 px-4 py-3">
                         <p class="font-body text-sm text-leaf-700">No one has answered this yet.</p>
                         <x-question-action :question="$question" size="md" />

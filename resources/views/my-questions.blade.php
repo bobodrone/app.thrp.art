@@ -14,13 +14,28 @@
             <div class="divide-y divide-soil-200 rounded-2xl border border-leaf-200 bg-white shadow-sm">
                 @foreach ($questions as $q)
                     <a href="{{ route('questions.show', $q) }}"
-                        class="flex items-center justify-between gap-4 px-5 py-4 hover:bg-soil-50">
+                        class="flex items-start justify-between gap-4 px-5 py-4 hover:bg-soil-50">
                         <div class="min-w-0">
                             <p class="truncate font-body text-sm text-soil-900">{{ \Illuminate\Support\Str::limit($q->content, 120) }}</p>
                             <p class="mt-0.5 font-body text-xs text-soil-400">{{ $q->created_at->diffForHumans() }}</p>
+
+                            {{-- The asker keeps sight of their hidden question, and of why. --}}
+                            @if ($q->isHidden())
+                                <p class="mt-2 font-body text-xs text-soil-500">
+                                    Hidden by a moderator — no longer shown in the public feed.
+                                </p>
+                                @if ($q->hidden_reason)
+                                    <p class="mt-1 border-l-2 border-soil-300 pl-2 font-body text-xs italic text-soil-500">
+                                        {{ $q->hidden_reason }}
+                                    </p>
+                                @endif
+                            @endif
                         </div>
-                        <div class="shrink-0">
+                        <div class="flex shrink-0 flex-col items-end gap-1">
                             <x-status-badge :status="$q->status" />
+                            @if ($q->isHidden())
+                                <x-hidden-badge />
+                            @endif
                         </div>
                     </a>
                 @endforeach

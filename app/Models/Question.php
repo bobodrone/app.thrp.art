@@ -24,6 +24,7 @@ class Question extends Model
     protected $casts = [
         'status'     => QuestionStatus::class,
         'claimed_at' => 'datetime',
+        'hidden_at'  => 'datetime',
     ];
 
     protected $fillable = [
@@ -50,13 +51,76 @@ class Question extends Model
     }
 
     /**
+     * Taken out of public view by an admin. Distinct from a soft delete: the
+     * question is still live, the asker still sees it, and `status` still says
+     * where in the lifecycle it stopped — so unhiding puts it back untouched.
+     */
+    public function isHidden(): bool
+    {
+        return $this->hidden_at !== null;
+    }
+
+    /**
+     * Pull this question out of public view. The reason is optional and is
+     * shown to the asker, not just logged — hiding without a word is allowed,
+     * hiding with one that only admins can read is not the point.
+     */
+    public function hide(User $admin, ?string $reason = null): void
+    {
+        $reason = trim((string) $reason);
+
+        $this->forceFill([
+            'hidden_at'     => now(),
+            'hidden_by'     => $admin->id,
+            'hidden_reason' => $reason === '' ? null : $reason,
+        ])->save();
+    }
+
+    /**
+     * Put it back. The reason goes with it — it described a state that no
+     * longer holds, and leaving it behind would show the asker a stale notice
+     * if the question were ever hidden again without one.
+     */
+    public function unhide(): void
+    {
+        $this->forceFill([
+            'hidden_at'     => null,
+            'hidden_by'     => null,
+            'hidden_reason' => null,
+        ])->save();
+    }
+
+    /**
+     * Whether $user may hide and unhide this question. Moderation, so admins
+     * only — the same bar as taking an answer down.
+     */
+    public function isHideableBy(?User $user): bool
+    {
+        return $user?->role === UserRole::Admin;
+    }
+
+    /**
+     * Whether $user may see this question at all. Hiding only closes the door
+     * to the public: the asker keeps sight of their own question (that is where
+     * the reason is read), and admins see everything.
+     */
+    public function isViewableBy(?User $user): bool
+    {
+        return ! $this->isHidden()
+            || ($user !== null && ($user->id === $this->asked_by || $user->role === UserRole::Admin));
+    }
+
+    /**
      * Take an open question. The status check lives in the WHERE clause so two
-     * creators clicking at the same moment cannot both win — the loser gets false.
+     * creators clicking at the same moment cannot both win — the loser gets
+     * false. Hidden questions are excluded there too, so a page left open from
+     * before the hide cannot claim one.
      */
     public function claimBy(User $user): bool
     {
         return static::whereKey($this->getKey())
             ->where('status', QuestionStatus::Asked)
+            ->whereNull('hidden_at')
             ->update([
                 'status'     => QuestionStatus::Claimed,
                 'claimed_by' => $user->id,
@@ -72,7 +136,8 @@ class Question extends Model
     {
         return $user !== null
             && $user->role->isAtLeast(UserRole::Creator)
-            && $this->status === QuestionStatus::Asked;
+            && $this->status === QuestionStatus::Asked
+            && ! $this->isHidden();
     }
 
     /**
@@ -96,6 +161,7 @@ class Question extends Model
         return $user !== null
             && $user->role->isAtLeast(UserRole::Creator)
             && $this->hasVisibleAnswer()
+            && ! $this->isHidden()
             && ! $this->hasAnswerFrom($user);
     }
 
@@ -115,8 +181,8 @@ class Question extends Model
     /**
      * Publish the claimer's answer into the main slot, or null when the claim
      * no longer holds. The claim is re-checked in the WHERE clause and before
-     * anything is written, so a creator who lost the question while writing
-     * lands nothing at all.
+     * anything is written, so a creator who lost the question while writing —
+     * or who was still writing when an admin hid it — lands nothing at all.
      */
     public function publishPrimaryAnswerFrom(User $author, string $body, ?string $imagePath = null): ?Answer
     {
@@ -124,6 +190,7 @@ class Question extends Model
             $claimed = static::whereKey($this->getKey())
                 ->where('status', QuestionStatus::Claimed)
                 ->where('claimed_by', $author->id)
+                ->whereNull('hidden_at')
                 ->update(['status' => QuestionStatus::Answered]);
 
             if ($claimed !== 1) {
@@ -351,6 +418,11 @@ class Question extends Model
         return $this->belongsTo(User::class, 'claimed_by');
     }
 
+    public function hiddenBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'hidden_by');
+    }
+
     public function answers(): HasMany
     {
         return $this->hasMany(Answer::class);
@@ -359,6 +431,15 @@ class Question extends Model
     public function primaryAnswer(): BelongsTo
     {
         return $this->belongsTo(Answer::class, 'primary_answer_id');
+    }
+
+    /**
+     * Everything the public is allowed to see. Every listing that is not the
+     * admin table or the asker's own should go through this.
+     */
+    public function scopeVisible(Builder $q): Builder
+    {
+        return $q->whereNull('hidden_at');
     }
 
     public function scopeOpen(Builder $q): Builder

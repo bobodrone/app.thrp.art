@@ -109,10 +109,14 @@ class Answer extends Model
     /**
      * Answers that publicly carry their creator's name. Anonymous ones are
      * excluded on purpose: counting them on a public profile would re-attribute
-     * what the creator chose not to sign.
+     * what the creator chose not to sign. Answers on a question the public
+     * cannot reach are excluded too — hidden by an admin, or soft-deleted,
+     * which the relation's own global scope takes care of.
      */
     public function scopePubliclyCredited(Builder $q): Builder
     {
-        return $q->published()->where('anonymously', false);
+        return $q->published()
+            ->where('anonymously', false)
+            ->whereHas('question', fn (Builder $question) => $question->visible());
     }
 }

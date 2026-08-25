@@ -24,6 +24,9 @@ class HomeController extends Controller
             'primaryAnswer.author:id,name,role',
             'answers:id,question_id,created_by',
         ])
+            // Hidden questions leave the feed entirely; the asker finds theirs
+            // on /my-questions, where the reason is shown.
+            ->visible()
             ->select(['id', 'content', 'status', 'asked_by', 'claimed_by', 'primary_answer_id', 'created_at'])
             ->latest('created_at')
             ->limit(20)

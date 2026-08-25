@@ -39,7 +39,14 @@
             Show deleted
         </label>
 
-        @if ($statusFilter || $search || $showDeleted)
+        {{-- Hidden questions are always listed; this narrows the table to them. --}}
+        <label class="flex items-center gap-2 font-body text-sm text-soil-600">
+            <input type="checkbox" wire:model.live="hiddenOnly"
+                class="rounded border-soil-300 text-leaf-600 shadow-sm focus:ring-leaf-500" />
+            Hidden only
+        </label>
+
+        @if ($statusFilter || $search || $showDeleted || $hiddenOnly)
             <button type="button" wire:click="resetFilters"
                 class="font-body text-sm text-soil-500 hover:text-soil-700 hover:underline">
                 Reset
@@ -74,8 +81,12 @@
                         $start = ($page - 1) * $perPage;
                     @endphp
                     @foreach ($questions as $i => $q)
-                        @php $isTrashed = $q->trashed(); @endphp
-                        <tr wire:key="q-{{ $q->id }}" class="{{ $isTrashed ? 'bg-poppy-100/40' : 'hover:bg-soil-50' }}">
+                        @php
+                            $isTrashed = $q->trashed();
+                            $isHidden  = $q->isHidden();
+                        @endphp
+                        <tr wire:key="q-{{ $q->id }}"
+                            class="{{ $isTrashed ? 'bg-poppy-100/40' : ($isHidden ? 'bg-soil-100/60' : 'hover:bg-soil-50') }}">
                             <td class="px-4 py-3 tabular-nums text-soil-400">
                                 {{ $start + $i + 1 }}
                             </td>
@@ -95,6 +106,17 @@
                                         <span class="rounded-full bg-poppy-100 px-2 py-0.5 font-body text-xs font-medium text-poppy-600">Deleted</span>
                                     @elseif ($q->hasHiddenAnswer())
                                         <span class="rounded-full bg-soil-100 px-2 py-0.5 font-body text-xs text-soil-500">Answer removed</span>
+                                    @endif
+                                    @if ($isHidden)
+                                        <x-hidden-badge />
+                                        <span class="font-body text-xs text-soil-400">
+                                            by {{ $q->hiddenBy?->name ?? 'a moderator' }}
+                                        </span>
+                                        @if ($q->hidden_reason)
+                                            <span class="max-w-[14rem] font-body text-xs italic text-soil-500">
+                                                “{{ \Illuminate\Support\Str::limit($q->hidden_reason, 60) }}”
+                                            </span>
+                                        @endif
                                     @endif
                                 </div>
                             </td>
@@ -132,6 +154,13 @@
                                             <button type="button" wire:click="restoreAnswer({{ $q->id }})"
                                                 class="font-semibold text-leaf-600 hover:underline">Restore answer</button>
                                         @endif
+                                        @if ($isHidden)
+                                            <button type="button" wire:click="unhide({{ $q->id }})"
+                                                class="font-semibold text-leaf-600 hover:underline">Unhide</button>
+                                        @else
+                                            <button type="button" wire:click="confirmHide({{ $q->id }})"
+                                                class="font-semibold text-soil-500 hover:text-soil-700 hover:underline">Hide</button>
+                                        @endif
                                         <button type="button" wire:click="delete({{ $q->id }})"
                                             wire:confirm="Delete this question and its answer? It can be restored from “Show deleted”."
                                             class="font-semibold text-poppy-600 hover:underline">Delete</button>
@@ -149,6 +178,61 @@
             {{ $questions->links() }}
         </div>
     @endif
+
+    {{-- ── Hide modal ───────────────────────────────────────────────────────── --}}
+    <div
+        x-data="{}"
+        x-show="$wire.showHide"
+        x-cloak
+        x-on:keydown.escape.window="$wire.showHide = false"
+        x-effect="document.body.classList.toggle('overflow-y-hidden', $wire.showHide)"
+        class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 sm:p-6"
+        role="dialog"
+        aria-modal="true"
+    >
+        <div
+            x-show="$wire.showHide"
+            x-transition.opacity
+            x-on:click="$wire.showHide = false"
+            class="fixed inset-0 bg-soil-900/50"
+        ></div>
+
+        <div
+            x-show="$wire.showHide"
+            x-transition
+            class="relative z-10 my-auto w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-xl"
+        >
+            <div class="max-h-[85vh] overflow-y-auto p-6">
+                <h2 class="font-display text-lg font-bold text-soil-900">Hide question</h2>
+                <p class="mt-2 font-body text-sm text-soil-600">
+                    It leaves the public feed and can no longer be claimed or answered. The person
+                    who asked it keeps seeing it, along with whatever you write below. Nobody is
+                    emailed. To remove a question without telling anyone, delete it instead.
+                </p>
+
+                <div class="mt-5">
+                    <label for="hide-reason" class="mb-1 block font-body text-xs font-medium uppercase tracking-wide text-soil-500">
+                        Reason (optional — shown to the asker)
+                    </label>
+                    <textarea id="hide-reason" wire:model="hideReason" rows="4"
+                        placeholder="e.g. Please rephrase without naming a specific person."
+                        class="w-full rounded-xl border-soil-300 font-body text-sm shadow-sm"></textarea>
+                    @error('hideReason') <p class="mt-1 font-body text-xs text-poppy-600">{{ $message }}</p> @enderror
+                </div>
+
+                <div class="mt-6 flex justify-end gap-3">
+                    <button type="button" x-on:click="$wire.showHide = false"
+                        class="rounded-xl border border-soil-300 px-4 py-2 font-body text-sm text-soil-600 hover:bg-soil-50">
+                        Cancel
+                    </button>
+                    <button type="button" wire:click="hide"
+                        class="rounded-xl bg-soil-700 px-4 py-2 font-body text-sm font-semibold text-white hover:bg-soil-900">
+                        Hide question
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     {{-- ── Edit modal ───────────────────────────────────────────────────────── --}}
     <div

@@ -19,7 +19,10 @@ class CreatorAnsweredController extends Controller
         // a creator only ever sees the questions they answered themselves —
         // as the main answer or as an alternative — ordered by their own
         // answer's date rather than whatever landed on the question last.
+        // A hidden question drops off this list for everyone, admins included —
+        // the admin table is where hidden questions are worked on.
         $answered = Question::with(['asker:id,name', 'primaryAnswer.author:id,name,role'])
+            ->visible()
             ->when($isAdmin, fn ($q) => $q->answered(), fn ($q) => $q->answeredBy($user->id))
             ->withMax(
                 ['answers as last_answered_at' => fn (Builder $a) => $isAdmin ? $a : $a->writtenBy($user->id)],

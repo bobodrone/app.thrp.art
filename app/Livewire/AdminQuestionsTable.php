@@ -22,6 +22,10 @@ class AdminQuestionsTable extends Component
     #[Url(as: 'deleted')]
     public bool $showDeleted = false;
 
+    /** Hidden questions are listed by default — they are live rows, not removed ones. */
+    #[Url(as: 'hidden')]
+    public bool $hiddenOnly = false;
+
     #[Locked]
     public ?int $editingId = null;
 
@@ -32,6 +36,13 @@ class AdminQuestionsTable extends Component
     public bool $editHasAnswer = false;
 
     public bool $showEdit = false;
+
+    #[Locked]
+    public ?int $hidingId = null;
+
+    public string $hideReason = '';
+
+    public bool $showHide = false;
 
     public function updatingStatusFilter(): void
     {
@@ -48,9 +59,14 @@ class AdminQuestionsTable extends Component
         $this->resetPage();
     }
 
+    public function updatingHiddenOnly(): void
+    {
+        $this->resetPage();
+    }
+
     public function resetFilters(): void
     {
-        $this->reset(['statusFilter', 'search', 'showDeleted']);
+        $this->reset(['statusFilter', 'search', 'showDeleted', 'hiddenOnly']);
         $this->resetPage();
     }
 
@@ -130,6 +146,45 @@ class AdminQuestionsTable extends Component
         session()->flash('admin-questions-ok', 'Question permanently deleted.');
     }
 
+    /**
+     * Open the hide dialog. The reason is asked for here rather than assumed,
+     * but stays optional — some questions come down without needing a word.
+     */
+    public function confirmHide(int $id): void
+    {
+        $question = Question::findOrFail($id);
+
+        $this->hidingId   = $question->id;
+        $this->hideReason = $question->hidden_reason ?? '';
+
+        $this->resetErrorBag();
+        $this->showHide = true;
+    }
+
+    public function hide(): void
+    {
+        $this->validate(
+            ['hideReason' => ['nullable', 'string', 'max:1000']],
+            ['hideReason.max' => 'Reason must be 1000 characters or fewer.'],
+        );
+
+        $question = Question::findOrFail($this->hidingId);
+
+        // Written for the asker: this is the text they read on their own
+        // question page, not an internal note.
+        $question->hide(auth()->user(), $this->hideReason);
+
+        $this->reset(['hidingId', 'hideReason', 'showHide']);
+        session()->flash('admin-questions-ok', 'Question hidden — the asker can still see it, with your reason.');
+    }
+
+    public function unhide(int $id): void
+    {
+        Question::findOrFail($id)->unhide();
+
+        session()->flash('admin-questions-ok', 'Question is public again.');
+    }
+
     public function restoreAnswer(int $id): void
     {
         $question = Question::findOrFail($id);
@@ -150,7 +205,7 @@ class AdminQuestionsTable extends Component
             ->when($this->showDeleted, fn ($q) => $q->withTrashed())
             // Every answer comes along: the table credits all of a question's
             // responders, not only the one holding the main slot.
-            ->with(['asker:id,name', 'claimer:id,name', 'primaryAnswer.author:id,name,role', 'answers.author:id,name,role'])
+            ->with(['asker:id,name', 'claimer:id,name', 'hiddenBy:id,name', 'primaryAnswer.author:id,name,role', 'answers.author:id,name,role'])
             ->withCount('answers')
             ->when(in_array($this->statusFilter, $validStatuses, true), function ($q) {
                 $q->where('status', $this->statusFilter);
@@ -158,6 +213,7 @@ class AdminQuestionsTable extends Component
             ->when(trim($this->search) !== '', function ($q) {
                 $q->where('content', 'like', '%' . trim($this->search) . '%');
             })
+            ->when($this->hiddenOnly, fn ($q) => $q->whereNotNull('hidden_at'))
             ->latest('created_at')
             ->paginate(100);
 

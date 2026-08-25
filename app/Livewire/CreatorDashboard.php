@@ -14,6 +14,7 @@ class CreatorDashboard extends Component
         $userId = auth()->id();
 
         $openQuestions = Question::with('asker:id,name')
+            ->visible()
             ->open()
             ->oldest('created_at')
             ->get();

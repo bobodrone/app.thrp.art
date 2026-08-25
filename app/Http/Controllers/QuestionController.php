@@ -19,6 +19,11 @@ class QuestionController extends Controller
 
     public function show(Request $request, Question $question): View
     {
+        // A hidden question is a 404 to the public. The asker still gets their
+        // own — that page is where the moderator's reason is read — and admins
+        // see everything.
+        abort_unless($question->isViewableBy($request->user()), 404);
+
         $question->load([
             'asker:id,name',
             // posts_anonymously decides how the claimer is credited while they write.
@@ -26,6 +31,7 @@ class QuestionController extends Controller
             'primaryAnswer.author:id,name,role',
             // role comes along because each credit links to a public profile.
             'answers.author:id,name,role',
+            'hiddenBy:id,name',
         ]);
 
         return view('questions.show', [

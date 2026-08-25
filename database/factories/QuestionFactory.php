@@ -50,6 +50,17 @@ class QuestionFactory extends Factory
     }
 
     /**
+     * Taken out of public view by a moderator. Goes through hide() rather than
+     * setting the columns, so the state cannot drift from the real action.
+     */
+    public function hidden(?User $admin = null, ?string $reason = null): static
+    {
+        return $this->afterCreating(function (Question $question) use ($admin, $reason) {
+            $question->hide($admin ?? User::factory()->admin()->create(), $reason);
+        });
+    }
+
+    /**
      * Adds an alternative answer from another creator, on top of whatever the
      * main answer is.
      */
