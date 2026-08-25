@@ -10,8 +10,8 @@
         }
         if ($user->role === UserRole::Admin) {
             $navLinks[] = ['label' => 'Questions admin', 'url' => route('admin.questions')];
-            $navLinks[] = ['label' => 'Responders admin', 'url' => route('admin.creators')];
-            $navLinks[] = ['label' => 'Admins admin', 'url' => route('admin.users')];
+            $navLinks[] = ['label' => 'Users admin', 'url' => route('admin.users')];
+            $navLinks[] = ['label' => 'Applications', 'url' => route('admin.applications')];
         }
         $navLinks[] = ['label' => 'My Questions', 'url' => route('my-questions')];
         if ($user->role === UserRole::Member) {

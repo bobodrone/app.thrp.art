@@ -9,7 +9,7 @@ use App\Http\Controllers\PublicCreatorController;
 use App\Http\Controllers\QuestionClaimController;
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\SettingsController;
-use App\Livewire\AdminCreatorManagement;
+use App\Livewire\AdminApplications;
 use App\Livewire\AdminQuestionsTable;
 use App\Livewire\AdminUserManagement;
 use App\Livewire\CreatorApplicationForm;
@@ -82,8 +82,10 @@ Route::middleware(['auth', 'role:creator,admin'])->prefix('responder')->name('cr
 // Admin area (built out in Phases 6–7 — stubs)
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/questions', AdminQuestionsTable::class)->name('questions');
-    Route::get('/responders', AdminCreatorManagement::class)->name('creators');
+    // Every account, whatever its role — find, edit, block, anonymise.
     Route::get('/users', AdminUserManagement::class)->name('users');
+    // Just the responder application queue; the accounts it creates are managed above.
+    Route::get('/applications', AdminApplications::class)->name('applications');
 });
 
 // Legacy /creator(s) URLs, kept alive for bookmarks and inbound links after the
@@ -91,7 +93,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 
 Route::redirect('/creators', '/responders', 301);
 Route::redirect('/creators/{user}', '/responders/{user}', 301);
-Route::redirect('/admin/creators', '/admin/responders', 301);
+Route::redirect('/admin/creators', '/admin/applications', 301);
+Route::redirect('/admin/responders', '/admin/applications', 301);
 Route::redirect('/creator', '/responder', 301);
 
 // Everything under the old answerer-area prefix, split by verb rather than

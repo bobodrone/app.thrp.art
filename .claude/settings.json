@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(vendor/bin/pint tests/Feature/LegacyCreatorUrlRedirectTest.php)",
+      "Bash(vendor/bin/pint --test tests/Feature/LegacyCreatorUrlRedirectTest.php tests/Feature/UiCopySaysResponderTest.php app/Http/Controllers/QuestionClaimController.php)",
+      "Bash(backlog search *)",
+      "Bash(python3 -c ' *)",
+      "Bash(/home/fredric/workspace/nipponpippon/THRP-laravel/vendor/bin/pint base/web-fixed.php)",
+      "Bash(/home/fredric/workspace/nipponpippon/THRP-laravel/vendor/bin/pint base/web-mine-fixed.php)",
+      "Bash(grep -rEn \"[\\\\\"'\\)\\\\]a-zA-Z0-9_] \\\\. [\\\\\"'\\\\$]\" app/ routes/ config/ database/ tests/ --include=\"*.php\")",
+      "Bash(grep -rEn \"[\\\\\"'\\)\\\\]a-zA-Z0-9_]\\\\.[\\\\\"'\\\\$]\" app/ routes/ config/ database/ tests/ --include=\"*.php\")",
+      "Bash(vendor/bin/pint --test)",
+      "Bash(vendor/bin/pint)",
+      "Bash(git checkout *)",
+      "Bash(vendor/bin/pint --help)",
+      "Bash(composer lint *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(php -r ' *)",
+      "Bash(php -r 'echo ini_get\\(\"memory_limit\"\\);')",
+      "Bash(echo \"php default memory_limit: $\\(php -r 'echo ini_get\\(\"memory_limit\"\\);'\\)\")",
+      "Bash(php vendor/bin/phpunit)",
+      "Bash(composer test *)"
+    ]
+  }
+}

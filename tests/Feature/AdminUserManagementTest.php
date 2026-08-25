@@ -11,6 +11,10 @@ use Illuminate\Support\Facades\Mail;
 use Livewire\Livewire;
 use Tests\TestCase;
 
+/**
+ * The users table: one list of every account, whatever its role.
+ * Blocking has its own file — see BlockUserTest.
+ */
 class AdminUserManagementTest extends TestCase
 {
     use RefreshDatabase;
@@ -21,32 +25,72 @@ class AdminUserManagementTest extends TestCase
             ->get('/admin/users')->assertForbidden();
     }
 
+    public function test_responder_is_forbidden(): void
+    {
+        $this->actingAs(User::factory()->creator()->create())
+            ->get('/admin/users')->assertForbidden();
+    }
+
     public function test_guest_is_redirected_to_login(): void
     {
         $this->get('/admin/users')->assertRedirect('/login');
     }
 
-    public function test_admin_sees_admin_list_and_current_user_badge(): void
+    public function test_every_role_is_listed_not_just_admins(): void
     {
-        $a1 = User::factory()->create(['role' => UserRole::Admin, 'name' => 'Ada']);
-        $a2 = User::factory()->create(['role' => UserRole::Admin, 'name' => 'Bob']);
+        $admin  = User::factory()->admin()->create(['name' => 'Ada Admin']);
+        $member = User::factory()->create(['role' => UserRole::Member, 'name' => 'Mo Member']);
+        $creator = User::factory()->creator()->create(['name' => 'Rae Responder']);
 
-        $this->actingAs($a1)->get('/admin/users')
+        $this->actingAs($admin)->get('/admin/users')
             ->assertOk()
-            ->assertSee('Ada')
-            ->assertSee('Bob')
+            ->assertSee('Ada Admin')
+            ->assertSee('Mo Member')
+            ->assertSee('Rae Responder')
             ->assertSee('you');
     }
 
-    public function test_invite_creates_new_admin_and_sends_invite_email(): void
+    public function test_search_matches_name_or_email(): void
+    {
+        $admin = User::factory()->admin()->create();
+        User::factory()->create(['name' => 'Findable Fay', 'email' => 'fay@example.com']);
+        User::factory()->create(['name' => 'Hidden Hal', 'email' => 'hal@example.com']);
+
+        Livewire::actingAs($admin)
+            ->test(AdminUserManagement::class)
+            ->set('search', 'Findable')
+            ->assertSee('Findable Fay')
+            ->assertDontSee('Hidden Hal')
+            ->set('search', 'hal@example')
+            ->assertSee('Hidden Hal')
+            ->assertDontSee('Findable Fay');
+    }
+
+    public function test_role_filter_narrows_the_table(): void
+    {
+        $admin = User::factory()->admin()->create();
+        User::factory()->create(['role' => UserRole::Member, 'name' => 'Mo Member']);
+        User::factory()->creator()->create(['name' => 'Rae Responder']);
+
+        Livewire::actingAs($admin)
+            ->test(AdminUserManagement::class)
+            ->set('roleFilter', UserRole::Creator->value)
+            ->assertSee('Rae Responder')
+            ->assertDontSee('Mo Member');
+    }
+
+    // ── Invites ───────────────────────────────────────────────────────────
+
+    public function test_invite_creates_an_account_in_the_chosen_role(): void
     {
         Mail::fake();
-        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $admin = User::factory()->admin()->create();
 
         Livewire::actingAs($admin)
             ->test(AdminUserManagement::class)
             ->set('inviteEmail', 'newadmin@example.com')
             ->set('inviteName', 'New Admin')
+            ->set('inviteRole', UserRole::Admin->value)
             ->call('invite')
             ->assertHasNoErrors();
 
@@ -57,15 +101,32 @@ class AdminUserManagementTest extends TestCase
         Mail::assertSent(UserRoleInvite::class, fn ($m) => $m->role === UserRole::Admin);
     }
 
-    public function test_invite_upgrades_existing_member_to_admin(): void
+    public function test_invite_can_also_create_a_responder(): void
     {
         Mail::fake();
-        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $admin = User::factory()->admin()->create();
+
+        Livewire::actingAs($admin)
+            ->test(AdminUserManagement::class)
+            ->set('inviteEmail', 'responder@example.com')
+            ->set('inviteRole', UserRole::Creator->value)
+            ->call('invite')
+            ->assertHasNoErrors();
+
+        $this->assertSame(UserRole::Creator, User::where('email', 'responder@example.com')->first()->role);
+        Mail::assertSent(UserRoleInvite::class, fn ($m) => $m->role === UserRole::Creator);
+    }
+
+    public function test_invite_upgrades_an_existing_account_rather_than_duplicating_it(): void
+    {
+        Mail::fake();
+        $admin  = User::factory()->admin()->create();
         $member = User::factory()->create(['role' => UserRole::Member, 'email' => 'existing@example.com']);
 
         Livewire::actingAs($admin)
             ->test(AdminUserManagement::class)
             ->set('inviteEmail', 'existing@example.com')
+            ->set('inviteRole', UserRole::Admin->value)
             ->call('invite')
             ->assertHasNoErrors();
 
@@ -73,51 +134,119 @@ class AdminUserManagementTest extends TestCase
         $this->assertDatabaseCount('users', 2);
     }
 
-    public function test_cannot_revoke_self(): void
+    public function test_invite_requires_a_valid_email(): void
     {
-        $admin = User::factory()->create(['role' => UserRole::Admin]);
+        $admin = User::factory()->admin()->create();
 
         Livewire::actingAs($admin)
             ->test(AdminUserManagement::class)
-            ->call('revoke', $admin->id)
-            ->assertHasErrors(['revoke_' . $admin->id]);
+            ->set('inviteEmail', 'not-an-email')
+            ->call('invite')
+            ->assertHasErrors(['inviteEmail']);
+    }
+
+    // ── Role changes ──────────────────────────────────────────────────────
+
+    public function test_role_can_be_changed_in_either_direction(): void
+    {
+        $admin  = User::factory()->admin()->create();
+        $member = User::factory()->create(['role' => UserRole::Member]);
+
+        Livewire::actingAs($admin)
+            ->test(AdminUserManagement::class)
+            ->call('changeRole', $member->id, UserRole::Creator->value)
+            ->assertHasNoErrors();
+
+        $this->assertSame(UserRole::Creator, $member->refresh()->role);
+
+        Livewire::actingAs($admin)
+            ->test(AdminUserManagement::class)
+            ->call('changeRole', $member->id, UserRole::Member->value)
+            ->assertHasNoErrors();
+
+        $this->assertSame(UserRole::Member, $member->refresh()->role);
+    }
+
+    public function test_an_unknown_role_is_refused(): void
+    {
+        $admin  = User::factory()->admin()->create();
+        $member = User::factory()->create(['role' => UserRole::Member]);
+
+        Livewire::actingAs($admin)
+            ->test(AdminUserManagement::class)
+            ->call('changeRole', $member->id, 'superuser')
+            ->assertHasErrors(['role_' . $member->id]);
+
+        $this->assertSame(UserRole::Member, $member->refresh()->role);
+    }
+
+    public function test_cannot_change_own_role(): void
+    {
+        $admin = User::factory()->admin()->create();
+        User::factory()->admin()->create();
+
+        Livewire::actingAs($admin)
+            ->test(AdminUserManagement::class)
+            ->call('changeRole', $admin->id, UserRole::Member->value)
+            ->assertHasErrors(['role_' . $admin->id]);
 
         $this->assertSame(UserRole::Admin, $admin->refresh()->role);
     }
 
-    public function test_cannot_revoke_last_admin(): void
+    public function test_cannot_demote_the_last_admin(): void
     {
-        $a1 = User::factory()->create(['role' => UserRole::Admin]);
-        $a2 = User::factory()->create(['role' => UserRole::Admin]);
+        $a1 = User::factory()->admin()->create();
+        $a2 = User::factory()->admin()->create();
 
+        // Demoting the second admin is fine — one is left.
         Livewire::actingAs($a1)
             ->test(AdminUserManagement::class)
-            // revoke a2 first → now only a1 remains
-            ->call('revoke', $a2->id)
+            ->call('changeRole', $a2->id, UserRole::Member->value)
             ->assertHasNoErrors();
 
         $this->assertSame(UserRole::Member, $a2->refresh()->role);
 
-        // Try to revoke a2 again (it's a member now; nothing should change),
-        // then try revoking self (must block because last admin).
+        // Demoting the one that remains is not.
         Livewire::actingAs($a1)
             ->test(AdminUserManagement::class)
-            ->call('revoke', $a1->id)
-            ->assertHasErrors(['revoke_' . $a1->id]);
+            ->call('changeRole', $a1->id, UserRole::Member->value)
+            ->assertHasErrors(['role_' . $a1->id]);
 
         $this->assertSame(UserRole::Admin, $a1->refresh()->role);
     }
 
-    public function test_revoke_admin_downgrades_to_member(): void
+    // ── Nickname ──────────────────────────────────────────────────────────
+
+    public function test_an_admin_can_rename_a_user(): void
     {
-        $admin = User::factory()->create(['role' => UserRole::Admin]);
-        $other = User::factory()->create(['role' => UserRole::Admin]);
+        $admin = User::factory()->admin()->create();
+        $user  = User::factory()->create(['name' => 'Rude Name']);
 
         Livewire::actingAs($admin)
             ->test(AdminUserManagement::class)
-            ->call('revoke', $other->id)
-            ->assertHasNoErrors();
+            ->call('edit', $user->id)
+            ->assertSet('showEdit', true)
+            ->assertSet('editName', 'Rude Name')
+            ->set('editName', '  Polite Name  ')
+            ->call('saveEdit')
+            ->assertHasNoErrors()
+            ->assertSet('showEdit', false);
 
-        $this->assertSame(UserRole::Member, $other->refresh()->role);
+        $this->assertSame('Polite Name', $user->refresh()->name);
+    }
+
+    public function test_a_rename_is_length_checked(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $user  = User::factory()->create(['name' => 'Keep Me']);
+
+        Livewire::actingAs($admin)
+            ->test(AdminUserManagement::class)
+            ->call('edit', $user->id)
+            ->set('editName', 'x')
+            ->call('saveEdit')
+            ->assertHasErrors(['editName']);
+
+        $this->assertSame('Keep Me', $user->refresh()->name);
     }
 }

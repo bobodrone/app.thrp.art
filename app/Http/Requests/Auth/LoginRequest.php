@@ -50,6 +50,18 @@ class LoginRequest extends FormRequest
             ]);
         }
 
+        // Checked only once the password has already proven correct, so a
+        // wrong guess never reveals that an address is blocked.
+        if (Auth::user()->isBlocked()) {
+            $notice = Auth::user()->blockNotice();
+
+            Auth::guard('web')->logout();
+
+            throw ValidationException::withMessages([
+                'email' => $notice,
+            ]);
+        }
+
         RateLimiter::clear($this->throttleKey());
     }
 

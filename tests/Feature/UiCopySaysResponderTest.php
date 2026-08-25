@@ -49,7 +49,7 @@ class UiCopySaysResponderTest extends TestCase
             [$creator, '/responder/profile'],
             [$creator, '/responder/answered'],
             [$creator, "/responder/questions/{$question->id}"],
-            [$admin,   '/admin/responders'],
+            [$admin,   '/admin/applications'],
             [$admin,   '/admin/questions'],
             [$admin,   '/admin/users'],
         ];

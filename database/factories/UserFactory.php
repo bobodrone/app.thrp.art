@@ -42,4 +42,13 @@ class UserFactory extends Factory
     {
         return $this->state(fn () => ['role' => UserRole::Admin]);
     }
+
+    public function blocked(?User $by = null, ?string $reason = null): static
+    {
+        return $this->state(fn () => [
+            'blocked_at'     => now(),
+            'blocked_by'     => $by?->id,
+            'blocked_reason' => $reason,
+        ]);
+    }
 }

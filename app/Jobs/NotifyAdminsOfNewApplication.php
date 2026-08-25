@@ -31,7 +31,7 @@ class NotifyAdminsOfNewApplication implements ShouldQueue
         }
 
         $preview  = Str::limit($this->message, 300);
-        $reviewUrl = config('app.url') . route('admin.creators', [], false);
+        $reviewUrl = config('app.url') . route('admin.applications', [], false);
 
         foreach ($admins as $admin) {
             Mail::to($admin)->send(new ApplicationReceived(

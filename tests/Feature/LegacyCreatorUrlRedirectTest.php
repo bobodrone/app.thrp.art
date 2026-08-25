@@ -42,7 +42,7 @@ class LegacyCreatorUrlRedirectTest extends TestCase
 
     public function test_the_admin_listing_redirects(): void
     {
-        $this->get('/admin/creators')->assertRedirect('/admin/responders');
+        $this->get('/admin/creators')->assertRedirect('/admin/applications');
     }
 
     public function test_redirects_are_permanent(): void
