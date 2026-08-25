@@ -37,7 +37,7 @@ class NotifyAdminsOfNewApplication implements ShouldQueue
             Mail::to($admin)->send(new ApplicationReceived(
                 applicantName: $this->name,
                 applicantEmail: $this->email,
-                message: $preview,
+                applicantMessage: $preview,
                 reviewUrl: $reviewUrl,
             ));
         }

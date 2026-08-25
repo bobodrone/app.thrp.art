@@ -99,13 +99,6 @@ class UiCopySaysResponderTest extends TestCase
                 'creator', (string) $mail->envelope()->subject, $name.' subject'
             );
 
-            // ApplicationReceived cannot be rendered: its $message property is
-            // shadowed by Laravel's injected Illuminate\Mail\Message. Pre-existing
-            // bug, unrelated to this rename — body checked by grep instead.
-            if ($name === 'ApplicationReceived') {
-                continue;
-            }
-
             $this->assertStringNotContainsStringIgnoringCase('creator', $mail->render(), $name.' body');
         }
 

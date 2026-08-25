@@ -1,5 +1,7 @@
 @php
     use App\Enums\UserRole;
+    use App\Models\ContactMessage;
+
     $user = auth()->user();
 
     // Shared link list so the desktop row and mobile panel stay in sync.
@@ -12,6 +14,14 @@
             $navLinks[] = ['label' => 'Questions admin', 'url' => route('admin.questions')];
             $navLinks[] = ['label' => 'Users admin', 'url' => route('admin.users')];
             $navLinks[] = ['label' => 'Applications', 'url' => route('admin.applications')];
+
+            // Only admins ever run this count, and only they see the badge.
+            $openMessages = ContactMessage::unhandled()->count();
+            $navLinks[] = [
+                'label' => 'Messages',
+                'url'   => route('admin.messages'),
+                'badge' => $openMessages ?: null,
+            ];
         }
         $navLinks[] = ['label' => 'My Questions', 'url' => route('my-questions')];
         if ($user->role === UserRole::Member) {
@@ -35,9 +45,15 @@
         <div class="hidden md:flex items-center gap-5 text-sm font-medium" x-data="{ open: false }" @click.away="open = false">
             <a href="https://thrp.art" target="_blank" class="text-sun-400 hover:text-white transition-colors">What’s it all about?</a>
             <a href="{{ route('creators.index') }}" class="text-leaf-100 hover:text-white transition-colors">Responders</a>
+            <a href="{{ route('contact') }}" class="text-leaf-100 hover:text-white transition-colors">Contact</a>
             @if ($user)
                 @foreach ($navLinks as $link)
-                    <a href="{{ $link['url'] }}" class="text-leaf-100 hover:text-white transition-colors">{{ $link['label'] }}</a>
+                    <a href="{{ $link['url'] }}" class="text-leaf-100 hover:text-white transition-colors">
+                        {{ $link['label'] }}
+                        @if (($link['badge'] ?? null))
+                            <span class="ml-1 rounded-full bg-sun-500 px-1.5 py-0.5 text-xs font-semibold text-soil-900">{{ $link['badge'] }}</span>
+                        @endif
+                    </a>
                 @endforeach
 
                 <!-- User dropdown -->
@@ -102,9 +118,15 @@
         <div class="flex flex-col text-sm font-medium">
             <a href="https://thrp.art" target="_blank" class="py-2.5 text-sun-400 hover:text-white transition-colors">What’s it all about?</a>
             <a href="{{ route('creators.index') }}" class="py-2.5 text-leaf-100 hover:text-white transition-colors">Responders</a>
+            <a href="{{ route('contact') }}" class="py-2.5 text-leaf-100 hover:text-white transition-colors">Contact</a>
             @if ($user)
                 @foreach ($navLinks as $link)
-                    <a href="{{ $link['url'] }}" class="py-2.5 text-leaf-100 hover:text-white transition-colors">{{ $link['label'] }}</a>
+                    <a href="{{ $link['url'] }}" class="py-2.5 text-leaf-100 hover:text-white transition-colors">
+                        {{ $link['label'] }}
+                        @if (($link['badge'] ?? null))
+                            <span class="ml-1 rounded-full bg-sun-500 px-1.5 py-0.5 text-xs font-semibold text-soil-900">{{ $link['badge'] }}</span>
+                        @endif
+                    </a>
                 @endforeach
 
                 <div class="my-2 border-t border-leaf-600"></div>

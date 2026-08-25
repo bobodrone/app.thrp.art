@@ -10,8 +10,10 @@ use App\Http\Controllers\QuestionClaimController;
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\SettingsController;
 use App\Livewire\AdminApplications;
+use App\Livewire\AdminContactMessages;
 use App\Livewire\AdminQuestionsTable;
 use App\Livewire\AdminUserManagement;
+use App\Livewire\ContactForm;
 use App\Livewire\CreatorApplicationForm;
 use App\Livewire\CreatorDashboard;
 use App\Livewire\CreatorProfile;
@@ -50,6 +52,10 @@ Route::get('/responders/{user}', [PublicCreatorController::class, 'show'])->name
 // Public responder application
 Route::get('/apply', CreatorApplicationForm::class)->name('apply');
 
+// Public contact form — open to visitors and members alike, spam-guarded in
+// the component rather than by middleware so a tripped guard can explain itself.
+Route::get('/contact', ContactForm::class)->name('contact');
+
 // One-time admin bootstrap — public (self-disables once an admin exists)
 Route::get('/admin/setup', [AdminBootstrapController::class, 'create'])->name('admin.setup');
 Route::post('/admin/setup', [AdminBootstrapController::class, 'store'])->name('admin.setup.store');
@@ -86,6 +92,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/users', AdminUserManagement::class)->name('users');
     // Just the responder application queue; the accounts it creates are managed above.
     Route::get('/applications', AdminApplications::class)->name('applications');
+    // The contact-form inbox.
+    Route::get('/messages', AdminContactMessages::class)->name('messages');
 });
 
 // Legacy /creator(s) URLs, kept alive for bookmarks and inbound links after the

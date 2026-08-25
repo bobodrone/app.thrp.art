@@ -7,7 +7,7 @@
     <strong>{{ $applicantName }}</strong> ({{ $applicantEmail }}) has applied to become a responder.
   </p>
   <blockquote style="margin:20px 0;padding:12px 16px;background:#f8f8f8;border-left:3px solid #1A5C38;color:#333;font-style:italic;line-height:1.6;">
-    &ldquo;{{ $message }}&rdquo;
+    &ldquo;{{ $applicantMessage }}&rdquo;
   </blockquote>
   <a href="{{ $reviewUrl }}"
      style="display:inline-block;margin:8px 0 24px;background:#1A5C38;color:#fff;padding:12px 28px;
