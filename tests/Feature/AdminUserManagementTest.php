@@ -2,11 +2,14 @@
 
 namespace Tests\Feature;
 
+use App\Enums\ApplicationStatus;
 use App\Enums\UserRole;
 use App\Livewire\AdminUserManagement;
 use App\Mail\UserRoleInvite;
+use App\Models\CreatorApplication;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -248,5 +251,88 @@ class AdminUserManagementTest extends TestCase
             ->assertHasErrors(['editName']);
 
         $this->assertSame('Keep Me', $user->refresh()->name);
+    }
+
+    // ── Conditions acceptance ─────────────────────────────────────────────
+    //
+    // Recorded when someone applies (see ApplyTest); shown here because this is
+    // where responders are managed and where access gets revoked.
+
+    private function applicationFor(User $user, ?string $acceptedAt): void
+    {
+        CreatorApplication::create([
+            'email'             => $user->email,
+            'name'              => $user->name,
+            'message'           => 'I would like to answer questions on THRP.',
+            'status'            => ApplicationStatus::Approved,
+            'applied_at'        => now(),
+            'terms_accepted_at' => $acceptedAt,
+        ]);
+    }
+
+    public function test_a_responder_row_shows_when_they_accepted_the_conditions(): void
+    {
+        $responder = User::factory()->creator()->create(['name' => 'Rae Responder']);
+        $this->applicationFor($responder, '2026-08-27 09:15:00');
+
+        $this->actingAs(User::factory()->admin()->create())
+            ->get('/admin/users')
+            ->assertOk()
+            ->assertSee('Conditions accepted 27 Aug 2026');
+    }
+
+    public function test_a_responder_with_no_acceptance_on_record_is_flagged(): void
+    {
+        User::factory()->creator()->create(['name' => 'Ivy Invited']);
+
+        $this->actingAs(User::factory()->admin()->create())
+            ->get('/admin/users')
+            ->assertOk()
+            ->assertSee('No conditions acceptance on record');
+    }
+
+    public function test_a_member_who_never_applied_is_not_flagged(): void
+    {
+        User::factory()->create(['role' => UserRole::Member, 'name' => 'Mo Member']);
+
+        $this->actingAs(User::factory()->admin()->create())
+            ->get('/admin/users')
+            ->assertOk()
+            ->assertSee('Mo Member')
+            ->assertDontSee('No conditions acceptance on record')
+            ->assertDontSee('Conditions accepted');
+    }
+
+    /** An admin is staff, not an applicant — the flag would nag on every admin row. */
+    public function test_an_admin_without_an_application_is_not_flagged(): void
+    {
+        $this->actingAs(User::factory()->admin()->create(['name' => 'Ada Admin']))
+            ->get('/admin/users')
+            ->assertOk()
+            ->assertDontSee('No conditions acceptance on record');
+    }
+
+    public function test_acceptance_dates_do_not_add_a_query_per_row(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $count = function () use ($admin): int {
+            DB::flushQueryLog();
+            DB::enableQueryLog();
+            $this->actingAs($admin)->get('/admin/users')->assertOk();
+            $queries = count(DB::getQueryLog());
+            DB::disableQueryLog();
+
+            return $queries;
+        };
+
+        $withOne = $count();
+
+        foreach (range(1, 5) as $i) {
+            $responder = User::factory()->creator()->create();
+            $this->applicationFor($responder, '2026-08-27 09:15:00');
+        }
+
+        $this->assertSame($withOne, $count());
     }
 }

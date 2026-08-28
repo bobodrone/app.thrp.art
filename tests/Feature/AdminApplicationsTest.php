@@ -120,4 +120,22 @@ class AdminApplicationsTest extends TestCase
 
         Mail::assertSent(ApplicationRejected::class, fn ($m) => $m->name === 'Notify Me');
     }
+
+    public function test_inbox_shows_when_the_applicant_accepted_the_conditions(): void
+    {
+        $this->application(['terms_accepted_at' => now()->setDate(2026, 8, 27)->setTime(9, 15)]);
+
+        Livewire::actingAs(User::factory()->admin()->create())
+            ->test(AdminApplications::class)
+            ->assertSee('Accepted the conditions on 27 Aug 2026, 09:15');
+    }
+
+    public function test_inbox_flags_an_application_with_no_acceptance_on_record(): void
+    {
+        $this->application(['terms_accepted_at' => null]);
+
+        Livewire::actingAs(User::factory()->admin()->create())
+            ->test(AdminApplications::class)
+            ->assertSee('no acceptance on record');
+    }
 }

@@ -1,3 +1,7 @@
+@php
+    use App\Enums\UserRole;
+@endphp
+
 <div class="mx-auto max-w-7xl px-4 py-10">
     <div class="mb-6 flex items-center justify-between">
         <h1 class="font-display text-2xl font-bold text-soil-900">Users</h1>
@@ -114,6 +118,12 @@
                                     @endif
                                 </p>
                                 <p class="text-soil-500">{{ $u->email }}</p>
+                                @php $acceptedAt = $u->termsAcceptedAt(); @endphp
+                                @if ($acceptedAt)
+                                    <p class="mt-1 text-xs text-leaf-700">✓ Conditions accepted {{ $acceptedAt->format('j M Y') }}</p>
+                                @elseif ($u->role === UserRole::Creator)
+                                    <p class="mt-1 text-xs text-soil-400">No conditions acceptance on record</p>
+                                @endif
                             </td>
 
                             <td class="px-4 py-3 align-top">

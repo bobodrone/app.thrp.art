@@ -15,12 +15,13 @@ class CreatorApplication extends Model
     protected $table = 'creator_applications';
 
     protected $casts = [
-        'status'      => ApplicationStatus::class,
-        'applied_at'  => 'datetime',
-        'reviewed_at' => 'datetime',
+        'status'            => ApplicationStatus::class,
+        'applied_at'        => 'datetime',
+        'reviewed_at'       => 'datetime',
+        'terms_accepted_at' => 'datetime',
     ];
 
-    protected $fillable = ['email', 'name', 'message', 'status', 'reviewed_at'];
+    protected $fillable = ['email', 'name', 'message', 'status', 'reviewed_at', 'terms_accepted_at'];
 
     public $timestamps = false; // we manage applied_at/reviewed_at explicitly
 }

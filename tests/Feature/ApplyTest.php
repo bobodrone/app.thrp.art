@@ -45,6 +45,7 @@ class ApplyTest extends TestCase
             ->set('name', 'New Applicant')
             ->set('email', 'new@example.com')
             ->set('message', str_repeat('I would like to be a creator please. ', 5))
+            ->set('acceptedTerms', true)
             ->call('submit')
             ->assertHasNoErrors()
             ->assertSet('submitted', true);
@@ -66,6 +67,7 @@ class ApplyTest extends TestCase
             ->set('name', 'Guest Applicant')
             ->set('email', 'guest@example.com')
             ->set('message', str_repeat('Some good reasons to be a creator please. ', 5))
+            ->set('acceptedTerms', true)
             ->call('submit')
             ->assertSet('submitted', true);
 
@@ -98,6 +100,7 @@ class ApplyTest extends TestCase
             ->set('name', 'Second App')
             ->set('email', 'dup@example.com')
             ->set('message', str_repeat('Trying again. ', 5))
+            ->set('acceptedTerms', true)
             ->call('submit')
             ->assertHasErrors(['email'])
             ->assertSet('submitted', false);
@@ -119,6 +122,7 @@ class ApplyTest extends TestCase
             ->set('name', 'Second App')
             ->set('email', 'approve@example.com')
             ->set('message', str_repeat('Trying again. ', 5))
+            ->set('acceptedTerms', true)
             ->call('submit')
             ->assertHasErrors(['email']);
     }
@@ -138,10 +142,53 @@ class ApplyTest extends TestCase
             ->set('name', 'Second App')
             ->set('email', 'rejected@example.com')
             ->set('message', str_repeat('Trying again. ', 5))
+            ->set('acceptedTerms', true)
             ->call('submit')
             ->assertHasNoErrors()
             ->assertSet('submitted', true);
 
         $this->assertDatabaseCount('creator_applications', 2);
+    }
+
+    public function test_application_requires_accepting_the_conditions(): void
+    {
+        Queue::fake();
+
+        Livewire::test(CreatorApplicationForm::class)
+            ->set('name', 'Unticked Applicant')
+            ->set('email', 'unticked@example.com')
+            ->set('message', str_repeat('I would like to be a responder please. ', 5))
+            ->set('acceptedTerms', false)
+            ->call('submit')
+            ->assertHasErrors(['acceptedTerms'])
+            ->assertSet('submitted', false);
+
+        $this->assertDatabaseCount('creator_applications', 0);
+        Queue::assertNothingPushed();
+    }
+
+    public function test_accepting_the_conditions_is_recorded_on_the_application(): void
+    {
+        Queue::fake();
+
+        Livewire::test(CreatorApplicationForm::class)
+            ->set('name', 'Ticked Applicant')
+            ->set('email', 'ticked@example.com')
+            ->set('message', str_repeat('I would like to be a responder please. ', 5))
+            ->set('acceptedTerms', true)
+            ->call('submit')
+            ->assertHasNoErrors();
+
+        $application = CreatorApplication::where('email', 'ticked@example.com')->sole();
+
+        $this->assertNotNull($application->terms_accepted_at);
+    }
+
+    public function test_apply_page_shows_the_conditions_and_checkbox(): void
+    {
+        $this->get('/apply')
+            ->assertOk()
+            ->assertSee('I hereby accept &amp; confirm the conditions', false)
+            ->assertSee('THRP is built on ideas of generosity');
     }
 }

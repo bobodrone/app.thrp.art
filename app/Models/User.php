@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\UserRole;
 use App\Notifications\ResetPassword;
 use App\Notifications\VerifyEmail;
+use Carbon\CarbonInterface;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -246,6 +247,16 @@ class User extends Authenticatable implements MustVerifyEmail
     public function applications(): HasMany
     {
         return $this->hasMany(CreatorApplication::class, 'email', 'email');
+    }
+
+    /**
+     * When this person accepted the responder conditions, or null if there is
+     * no acceptance on record — they were invited straight to responder, or
+     * applied before the conditions checkbox existed.
+     */
+    public function termsAcceptedAt(): ?CarbonInterface
+    {
+        return $this->applications->max('terms_accepted_at');
     }
 
     public function sendEmailVerificationNotification(): void

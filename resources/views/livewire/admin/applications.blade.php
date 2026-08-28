@@ -30,6 +30,15 @@
                                 <p class="font-body font-medium text-soil-900">{{ $app->name }}</p>
                                 <p class="font-body text-sm text-soil-500">{{ $app->email }} · {{ $app->applied_at->diffForHumans() }}</p>
                                 <p class="mt-2 font-body text-sm text-soil-700">{{ \Illuminate\Support\Str::limit($app->message, 200) }}</p>
+                                @if ($app->terms_accepted_at)
+                                    <p class="mt-2 font-body text-xs text-leaf-700">
+                                        ✓ Accepted the conditions on {{ $app->terms_accepted_at->format('j M Y, H:i') }}
+                                    </p>
+                                @else
+                                    <p class="mt-2 font-body text-xs text-soil-400">
+                                        Applied before the conditions checkbox existed — no acceptance on record.
+                                    </p>
+                                @endif
                             </div>
                             <div class="flex shrink-0 flex-col gap-2">
                                 <form wire:submit="approve({{ $app->id }})">

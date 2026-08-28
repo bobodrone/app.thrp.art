@@ -265,7 +265,7 @@ class AdminUserManagement extends Component
     public function render()
     {
         $users = User::query()
-            ->with('blockedBy:id,name')
+            ->with(['blockedBy:id,name', 'applications:email,terms_accepted_at'])
             ->withCount('questionsAsked')
             ->when(trim($this->search) !== '', function ($q) {
                 $term = '%' . trim($this->search) . '%';

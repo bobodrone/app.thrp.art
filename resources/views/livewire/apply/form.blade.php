@@ -58,6 +58,24 @@
                                 wire:model="message"
                                 class="w-full rounded-xl border-soil-300 font-body shadow-sm"></textarea>
                         </div>
+
+                        <div class="space-y-3">
+                            <x-responder-terms />
+
+                            <label for="acceptedTerms" class="flex cursor-pointer items-start gap-3">
+                                <input id="acceptedTerms" type="checkbox" required
+                                    wire:model="acceptedTerms"
+                                    class="mt-0.5 h-5 w-5 shrink-0 rounded border-soil-300 text-leaf-600 shadow-sm focus:ring-leaf-500" />
+                                <span class="font-body text-sm text-soil-700">
+                                    I hereby accept &amp; confirm the conditions
+                                </span>
+                            </label>
+
+                            @error('acceptedTerms')
+                                <p class="font-body text-sm text-poppy-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
                         <button type="submit"
                             class="rounded-xl bg-soil-900 px-8 py-3 font-body font-semibold text-sun-500 hover:bg-soil-800 transition-colors">
                             Submit application

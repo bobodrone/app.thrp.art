@@ -16,6 +16,8 @@ class CreatorApplicationForm extends Component
 
     public string $message = '';
 
+    public bool $acceptedTerms = false;
+
     public bool $submitted = false;
 
     protected function rules(): array
@@ -24,6 +26,14 @@ class CreatorApplicationForm extends Component
             'email'   => ['required', 'email'],
             'name'     => ['required', 'string', 'min:2', 'max:40'],
             'message'  => ['required', 'string', 'min:20', 'max:500'],
+            'acceptedTerms' => ['accepted'],
+        ];
+    }
+
+    protected function messages(): array
+    {
+        return [
+            'acceptedTerms.accepted' => 'Please accept and confirm the conditions before applying.',
         ];
     }
 
@@ -57,10 +67,11 @@ class CreatorApplicationForm extends Component
         }
 
         CreatorApplication::create([
-            'name'    => $this->name,
-            'email'   => $this->email,
-            'message' => $this->message,
-            'status'  => ApplicationStatus::Pending,
+            'name'              => $this->name,
+            'email'             => $this->email,
+            'message'           => $this->message,
+            'status'            => ApplicationStatus::Pending,
+            'terms_accepted_at' => now(),
         ]);
 
         NotifyAdminsOfNewApplication::dispatch($this->email, $this->name, $this->message);
