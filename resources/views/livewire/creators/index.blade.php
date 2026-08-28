@@ -29,21 +29,21 @@
     </div>
 
     <div class="overflow-hidden rounded-2xl border border-leaf-200 bg-white shadow-sm">
-        <table class="w-full text-left">
+        <table class="w-full text-left table-fixed">
             <caption class="sr-only">Responders, with the number of answers each has published</caption>
             <thead class="border-b border-leaf-200 bg-soil-50">
                 <tr class="font-body text-xs font-semibold uppercase tracking-wide text-soil-600">
-                    <th scope="col" class="px-5 py-3" aria-sort="{{ $sort === 'name' ? ($direction === 'asc' ? 'ascending' : 'descending') : 'none' }}">
+                    <th scope="col" class="px-5 py-3 w-auto" aria-sort="{{ $sort === 'name' ? ($direction === 'asc' ? 'ascending' : 'descending') : 'none' }}">
                         <button type="button" wire:click="sortBy('name')" class="hover:text-leaf-600">
                             Responder{{ $arrow('name') }}
                         </button>
                     </th>
-                    <th scope="col" class="px-5 py-3 text-right" aria-sort="{{ $sort === 'answers' ? ($direction === 'asc' ? 'ascending' : 'descending') : 'none' }}">
+                    <th scope="col" class="px-5 py-3 w-20 text-right" aria-sort="{{ $sort === 'answers' ? ($direction === 'asc' ? 'ascending' : 'descending') : 'none' }}">
                         <button type="button" wire:click="sortBy('answers')" class="hover:text-leaf-600">
                             Answers{{ $arrow('answers') }}
                         </button>
                     </th>
-                    <th scope="col" class="px-5 py-3"><span class="sr-only">Profile</span></th>
+                    <th scope="col" class="px-5 py-3 w-32"><span class="sr-only">Profile</span></th>
                 </tr>
             </thead>
 
