@@ -74,9 +74,9 @@
            class="mt-2 flex items-center gap-1.5 font-body text-xs font-medium text-leaf-600">
             <x-flower size="12" petalColor="#FFD600" centerColor="#1A5C38" dotColor="#FFD600" />
             @if ($answerCount > 1)
-                {{ $answerCount }} answers — click to read
+                {{ $answerCount }} responses — click to read
             @else
-                Has an answer — click to read
+                Has a response — click to read
             @endif
         </p>
     @endif

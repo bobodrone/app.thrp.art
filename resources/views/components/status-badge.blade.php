@@ -15,7 +15,7 @@
     $label = match ($value) {
         'asked'    => 'Asked',
         'claimed'  => 'In progress',
-        'answered' => 'Answered',
+        'answered' => 'Responded',
         default     => ucfirst($value ?? ''),
     };
 @endphp
