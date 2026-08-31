@@ -9,7 +9,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Facades\Storage;
 
 /**
  * One creator's answer to a question. The question points back at whichever of
@@ -60,11 +59,7 @@ class Answer extends Model
      */
     public function imageUrl(): ?string
     {
-        if ($this->image_path === null) {
-            return null;
-        }
-
-        return Storage::disk(config('uploads.answer_image.disk'))->url($this->image_path);
+        return uploaded_image_url($this->image_path, 'answer_image');
     }
 
     /**

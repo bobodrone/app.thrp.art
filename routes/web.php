@@ -8,6 +8,7 @@ use App\Http\Controllers\MyQuestionsController;
 use App\Http\Controllers\PublicCreatorController;
 use App\Http\Controllers\QuestionClaimController;
 use App\Http\Controllers\QuestionController;
+use App\Http\Controllers\ServeUploadedSvg;
 use App\Http\Controllers\SettingsController;
 use App\Livewire\AdminApplications;
 use App\Livewire\AdminContactMessages;
@@ -95,6 +96,14 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     // The contact-form inbox.
     Route::get('/messages', AdminContactMessages::class)->name('messages');
 });
+
+// Uploaded SVGs. Unlike raster uploads, these are not served off the
+// public/storage symlink — they live on a private disk and come out only
+// through this route, which strips them of any power to act as a page. See
+// ServeUploadedSvg.
+Route::get('/media/{path}', ServeUploadedSvg::class)
+    ->where('path', '.*')
+    ->name('media.svg');
 
 // Legacy /creator(s) URLs, kept alive for bookmarks and inbound links after the
 // rename to "responder". Declared last so they never shadow a real route.

@@ -57,11 +57,7 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function avatarUrl(): ?string
     {
-        if ($this->avatar_path === null) {
-            return null;
-        }
-
-        return Storage::disk(config('uploads.avatar.disk'))->url($this->avatar_path);
+        return uploaded_image_url($this->avatar_path, 'avatar');
     }
 
     /** Creators and admins both work the creator side of the app. */
@@ -177,7 +173,7 @@ class User extends Authenticatable implements MustVerifyEmail
     private function deleteImage(): void
     {
         if ($this->avatar_path !== null) {
-            Storage::disk(config('uploads.avatar.disk'))->delete($this->avatar_path);
+            Storage::disk(uploaded_image_disk($this->avatar_path, 'avatar'))->delete($this->avatar_path);
         }
     }
 
