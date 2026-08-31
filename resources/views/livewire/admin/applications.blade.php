@@ -29,7 +29,7 @@
                             <div class="min-w-0">
                                 <p class="font-body font-medium text-soil-900">{{ $app->name }}</p>
                                 <p class="font-body text-sm text-soil-500">{{ $app->email }} · {{ $app->applied_at->diffForHumans() }}</p>
-                                <p class="mt-2 font-body text-sm text-soil-700">{{ \Illuminate\Support\Str::limit($app->message, 200) }}</p>
+                                <p class="mt-2 font-body text-sm text-soil-700">{{ \Illuminate\Support\Str::limit($app->message, 500) }}</p>
                                 @if ($app->terms_accepted_at)
                                     <p class="mt-2 font-body text-xs text-leaf-700">
                                         ✓ Accepted the conditions on {{ $app->terms_accepted_at->format('j M Y, H:i') }}
