@@ -107,7 +107,7 @@ class CreatorsDirectoryTest extends TestCase
 
         $this->get(route('creators.show', $creator))
             ->assertOk()
-            ->assertSee('1 answer published');
+            ->assertSee('1 response published');
     }
 
     public function test_profile_page_shows_bio_and_links(): void

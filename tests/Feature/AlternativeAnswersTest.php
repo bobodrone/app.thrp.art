@@ -216,7 +216,7 @@ class AlternativeAnswersTest extends TestCase
 
         $this->get(route('creators.show', $other))
             ->assertOk()
-            ->assertSee('1 answer published');
+            ->assertSee('1 response published');
     }
 
     public function test_the_answered_history_lists_questions_answered_as_an_alternative(): void

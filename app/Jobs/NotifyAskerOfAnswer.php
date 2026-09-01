@@ -16,7 +16,11 @@ class NotifyAskerOfAnswer implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public function __construct(public Question $question) {}
+    public function __construct(
+        public Question $question,
+        /** An edit to an answer the asker has already been told about. */
+        public bool $edited = false,
+    ) {}
 
     public function handle(): void
     {
@@ -33,6 +37,7 @@ class NotifyAskerOfAnswer implements ShouldQueue
             askerName: $asker->name ?? 'there',
             questionPreview: $preview,
             questionUrl: $url,
+            edited: $this->edited,
         ));
     }
 }

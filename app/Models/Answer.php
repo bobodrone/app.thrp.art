@@ -55,6 +55,19 @@ class Answer extends Model
     }
 
     /**
+     * Whether $user can actually get at this answer's edit form. Ownership on
+     * its own is not enough: the form lives on the responder view, behind the
+     * responder-role gate, so an author since demoted to member still owns the
+     * answer but has no way in to change it.
+     */
+    public function isEditFormOpenTo(?User $user): bool
+    {
+        return $user !== null
+            && $user->role->isAtLeast(UserRole::Creator)
+            && $this->isEditableBy($user);
+    }
+
+    /**
      * Public URL of the attached image, or null when there is none.
      */
     public function imageUrl(): ?string

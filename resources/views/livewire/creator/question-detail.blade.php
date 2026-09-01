@@ -48,7 +48,7 @@
     {{-- State A: open, can claim --}}
     @if ($canClaim)
         <div class="mt-6 rounded-2xl border border-leaf-200 bg-white p-6 text-center shadow-sm">
-            <p class="mb-4 font-body text-sm text-soil-600">Claim this question to start working on the answer.</p>
+            <p class="mb-4 font-body text-sm text-soil-600">Claim this question to start working on the response.</p>
             <form wire:submit="claim">
                 @csrf
                 <button type="submit"
@@ -61,7 +61,7 @@
     {{-- State B: claimed by me — show editor --}}
     @elseif ($isMyQuestion)
         <div class="mt-6 rounded-2xl border border-leaf-200 bg-white p-8 shadow-sm">
-            <p class="mb-4 font-body text-sm font-medium text-soil-700">Write your answer</p>
+            <p class="mb-4 font-body text-sm font-medium text-soil-700">Write your response</p>
 
             <div class="space-y-4">
                 <x-image-upload
@@ -74,7 +74,7 @@
                     <button type="button"
                         wire:click="submitAnswer"
                         class="rounded-xl bg-leaf-600 px-6 py-2 font-body text-sm font-semibold text-white hover:bg-leaf-500">
-                        Submit Answer
+                        Submit Response
                     </button>
                 </div>
             </div>
@@ -91,10 +91,10 @@
     {{-- State C: claimed by someone else --}}
     @elseif ($claimedByOther)
         <div class="mt-6 rounded-xl bg-sky-100 px-5 py-4 font-body text-sm text-sky-600">
-            This question is currently being answered by another responder.
+            This question is currently being responded to by another responder.
         </div>
 
-    {{-- State D: answered --}}
+    {{-- State D: responded --}}
     @elseif ($isAnswered && $renderedAnswer)
         <div class="mt-6 rounded-2xl border border-leaf-200 bg-white p-8 shadow-sm">
             @if ($editingAnswerId === $question->primary_answer_id)
@@ -103,17 +103,17 @@
                 </div>
             @else
                 <div class="mb-4 flex flex-wrap items-center justify-between gap-4">
-                    <p class="font-body text-xs font-medium uppercase tracking-wide text-soil-400">Answer</p>
+                    <p class="font-body text-xs font-medium uppercase tracking-wide text-soil-400">Response</p>
                     <div class="flex flex-wrap items-center gap-4">
                         @if ($canEditAnswer)
                             <button type="button" wire:click="startEditAnswer"
                                 class="font-body text-sm font-semibold text-leaf-600 hover:underline">
-                                Edit answer
+                                Edit response
                             </button>
                         @endif
                         @if ($canModerate)
                             <button type="button" wire:click="removeAnswer({{ $question->primary_answer_id }})"
-                                wire:confirm="Remove the main answer? The question reopens for claiming, and the answer can be restored from this page."
+                                wire:confirm="Remove the main response? The question reopens for claiming, and the response can be restored from this page."
                                 class="font-body text-sm font-semibold text-poppy-600 hover:underline">
                                 Remove
                             </button>
@@ -132,14 +132,14 @@
         </div>
     @endif
 
-    {{-- Alternative answers from other responders --}}
+    {{-- Alternative responses from other responders --}}
     @if ($otherAnswers->isNotEmpty())
         <h2 class="mb-3 mt-8 font-body text-xs font-semibold uppercase tracking-wider text-soil-400">
             @if ($question->hasVisibleAnswer())
-                {{ $otherAnswers->count() }} {{ \Illuminate\Support\Str::plural('other answer', $otherAnswers->count()) }}
+                {{ $otherAnswers->count() }} {{ \Illuminate\Support\Str::plural('other response', $otherAnswers->count()) }}
             @else
-                {{-- No main answer to be "other" than — it was removed, or never claimed. --}}
-                {{ $otherAnswers->count() }} {{ \Illuminate\Support\Str::plural('answer', $otherAnswers->count()) }}
+                {{-- No main response to be "other" than — it was removed, or never claimed. --}}
+                {{ $otherAnswers->count() }} {{ \Illuminate\Support\Str::plural('response', $otherAnswers->count()) }}
             @endif
         </h2>
 
@@ -151,7 +151,7 @@
                         <x-answer-editor
                             :draft="$answerDraft"
                             :image-preview="$editImagePreview"
-                            heading="Edit your answer"
+                            heading="Edit your response"
                         />
                     @else
                         @if ($row['canEdit'] || $row['canPromote'] || $canModerate)
@@ -159,20 +159,20 @@
                                 @if ($row['canPromote'])
                                     <button type="button"
                                         wire:click="promoteAnswer({{ $row['answer']->id }})"
-                                        wire:confirm="Make this the main answer? The current one becomes an alternative."
+                                        wire:confirm="Make this the main response? The current one becomes an alternative."
                                         class="font-body text-sm font-semibold text-sun-700 hover:underline">
-                                        Make main answer
+                                        Make main response
                                     </button>
                                 @endif
                                 @if ($row['canEdit'])
                                     <button type="button" wire:click="startEditAnswer({{ $row['answer']->id }})"
                                         class="font-body text-sm font-semibold text-leaf-600 hover:underline">
-                                        Edit answer
+                                        Edit response
                                     </button>
                                 @endif
                                 @if ($canModerate)
                                     <button type="button" wire:click="removeAnswer({{ $row['answer']->id }})"
-                                        wire:confirm="Remove this answer? It can be restored from this page."
+                                        wire:confirm="Remove this response? It can be restored from this page."
                                         class="font-body text-sm font-semibold text-poppy-600 hover:underline">
                                         Remove
                                     </button>
@@ -193,10 +193,10 @@
         </div>
     @endif
 
-    {{-- Removed answers, admins only — nothing here is public --}}
+    {{-- Removed responses, admins only — nothing here is public --}}
     @if ($removedAnswers->isNotEmpty())
         <h2 class="mb-3 mt-8 font-body text-xs font-semibold uppercase tracking-wider text-soil-400">
-            {{ $removedAnswers->count() }} removed {{ \Illuminate\Support\Str::plural('answer', $removedAnswers->count()) }}
+            {{ $removedAnswers->count() }} removed {{ \Illuminate\Support\Str::plural('response', $removedAnswers->count()) }}
         </h2>
 
         <div class="space-y-4">
@@ -224,12 +224,12 @@
         </div>
     @endif
 
-    {{-- Any responder without an answer here may add one alongside the main one --}}
+    {{-- Any responder without a response here may add one alongside the main one --}}
     @if ($canAddAlternative)
         <div class="mt-8 rounded-2xl border border-leaf-200 bg-white p-8 shadow-sm">
-            <p class="mb-1 font-body text-sm font-medium text-soil-700">Add your answer</p>
+            <p class="mb-1 font-body text-sm font-medium text-soil-700">Add your response</p>
             <p class="mb-4 font-body text-xs text-soil-400">
-                This question already has an answer. Yours will be shown alongside it.
+                This question already has a response. Yours will be shown alongside it.
             </p>
 
             @error('alternative')
@@ -247,7 +247,7 @@
                     <button type="button"
                         wire:click="submitAlternative"
                         class="rounded-xl bg-leaf-600 px-6 py-2 font-body text-sm font-semibold text-white hover:bg-leaf-500">
-                        Post my answer
+                        Post my response
                     </button>
                 </div>
             </div>

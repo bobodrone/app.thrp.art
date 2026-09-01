@@ -14,7 +14,7 @@
 
 @if ($answer->authorNameFor($viewer))
     <p class="mt-4 font-body text-xs text-soil-400">
-        Answered by <x-answerer-name :answer="$answer" :viewer="$viewer" class="font-medium text-soil-600" />
+        Response by <x-answerer-name :answer="$answer" :viewer="$viewer" class="font-medium text-soil-600" />
         @if ($answer->published_at)&nbsp;· {{ $answer->published_at->diffForHumans() }}@endif
     </p>
 @endif

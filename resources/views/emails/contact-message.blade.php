@@ -12,7 +12,7 @@
   </p>
   <blockquote style="margin:20px 0;padding:12px 16px;background:#f8f8f8;border-left:3px solid #1A5C38;color:#333;line-height:1.6;white-space:pre-wrap;">{{ $body }}</blockquote>
   <p style="color:#888;font-size:13px;line-height:1.6;">
-    Replying to this email answers {{ $senderName }} directly.
+    Replying to this email reaches {{ $senderName }} directly.
   </p>
   <a href="{{ $inboxUrl }}"
      style="display:inline-block;margin:8px 0 24px;background:#1A5C38;color:#fff;padding:12px 28px;

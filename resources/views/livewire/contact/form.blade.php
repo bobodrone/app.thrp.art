@@ -28,7 +28,7 @@
                     <h2 class="font-display mb-2 text-2xl font-bold text-soil-900">Message sent</h2>
                     <p class="font-body text-soil-600">
                         Thanks for writing. We read everything that comes in and will reply by email
-                        if your message needs an answer.
+                        if your message needs a reply.
                     </p>
                     <a href="{{ route('home') }}" class="mt-6 inline-block font-body text-sm font-semibold text-leaf-600 hover:underline">← Back to questions</a>
                 </div>

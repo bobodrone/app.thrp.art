@@ -50,6 +50,13 @@ class CreatorQuestionDetail extends Component
     /** Set when the creator clears the already-saved image while editing. */
     public bool $removeAnswerImage = false;
 
+    /**
+     * Opt in to telling the asker about this edit. Off every time the form
+     * opens: a typo fix is the common case and does not deserve an email, so
+     * the responder has to ask for one.
+     */
+    public bool $notifyAskerOfEdit = false;
+
     public function mount(Question $question): void
     {
         $this->questionId = $question->id;
@@ -187,8 +194,8 @@ class CreatorQuestionDetail extends Component
         $validated = $this->validate([
             'answer' => ['required', 'string', 'between:10,10000'],
         ] + $this->imageRules('answerImage'), [
-            'answer.required' => 'Answer text is required.',
-            'answer.between'  => 'Answer must be 10–10 000 characters.',
+            'answer.required' => 'Response text is required.',
+            'answer.between'  => 'Response must be 10–10 000 characters.',
         ] + $this->imageMessages('answerImage'));
 
         $imagePath = $this->answerImage ? $this->storeImage($this->answerImage) : null;
@@ -226,8 +233,8 @@ class CreatorQuestionDetail extends Component
         $validated = $this->validate([
             'alternative' => ['required', 'string', 'between:10,10000'],
         ] + $this->imageRules('alternativeImage'), [
-            'alternative.required' => 'Answer text is required.',
-            'alternative.between'  => 'Answer must be 10–10 000 characters.',
+            'alternative.required' => 'Response text is required.',
+            'alternative.between'  => 'Response must be 10–10 000 characters.',
         ] + $this->imageMessages('alternativeImage'));
 
         $imagePath = $this->alternativeImage ? $this->storeImage($this->alternativeImage) : null;
@@ -244,7 +251,7 @@ class CreatorQuestionDetail extends Component
 
         if ($answer === null) {
             $this->deleteImage($imagePath);
-            $this->addError('alternative', 'Could not add your answer — you may already have one on this question.');
+            $this->addError('alternative', 'Could not add your response — you may already have one on this question.');
 
             return;
         }
@@ -267,7 +274,7 @@ class CreatorQuestionDetail extends Component
         $answer   = $question->answers->firstWhere('id', $answerId);
 
         if ($answer === null || ! $question->isModeratableBy(auth()->user())) {
-            $this->addError('moderate', 'You are not allowed to remove this answer.');
+            $this->addError('moderate', 'You are not allowed to remove this response.');
 
             return;
         }
@@ -277,8 +284,8 @@ class CreatorQuestionDetail extends Component
         $question->removeAnswer($answer);
 
         session()->flash('moderation-ok', $wasPrimary
-            ? 'Main answer removed — the question is open for claiming again.'
-            : 'Answer removed.');
+            ? 'Main response removed — the question is open for claiming again.'
+            : 'Response removed.');
 
         $this->redirect(route('creator.questions.show', $this->questionId));
     }
@@ -293,14 +300,14 @@ class CreatorQuestionDetail extends Component
         $answer   = $question->answers()->onlyTrashed()->find($answerId);
 
         if ($answer === null || ! $question->isModeratableBy(auth()->user())) {
-            $this->addError('moderate', 'You are not allowed to restore this answer.');
+            $this->addError('moderate', 'You are not allowed to restore this response.');
 
             return;
         }
 
         $question->restoreAnswer($answer);
 
-        session()->flash('moderation-ok', 'Answer restored.');
+        session()->flash('moderation-ok', 'Response restored.');
 
         $this->redirect(route('creator.questions.show', $this->questionId));
     }
@@ -319,14 +326,14 @@ class CreatorQuestionDetail extends Component
         $answer = $question->answers->firstWhere('id', $answerId);
 
         if ($answer === null || ! $question->isPromotableBy(auth()->user(), $answer)) {
-            $this->addError('promote', 'You are not allowed to change the main answer.');
+            $this->addError('promote', 'You are not allowed to change the main response.');
 
             return;
         }
 
         $question->promoteToPrimary($answer);
 
-        session()->flash('moderation-ok', 'Main answer updated.');
+        session()->flash('moderation-ok', 'Main response updated.');
 
         $this->redirect(route('creator.questions.show', $this->questionId));
     }
@@ -348,13 +355,13 @@ class CreatorQuestionDetail extends Component
 
         $this->answerDraft     = $answer->body;
         $this->editingAnswerId = $answer->id;
-        $this->reset('answerImageDraft', 'removeAnswerImage');
+        $this->reset('answerImageDraft', 'removeAnswerImage', 'notifyAskerOfEdit');
         $this->resetErrorBag();
     }
 
     public function cancelEditAnswer(): void
     {
-        $this->reset('editingAnswerId', 'answerDraft', 'answerImageDraft', 'removeAnswerImage');
+        $this->reset('editingAnswerId', 'answerDraft', 'answerImageDraft', 'removeAnswerImage', 'notifyAskerOfEdit');
         $this->resetErrorBag();
     }
 
@@ -383,7 +390,7 @@ class CreatorQuestionDetail extends Component
         $answer = $this->answerBeingEdited();
 
         if ($answer === null) {
-            $this->addError('answerDraft', 'You are not allowed to edit this answer.');
+            $this->addError('answerDraft', 'You are not allowed to edit this response.');
 
             return;
         }
@@ -391,8 +398,8 @@ class CreatorQuestionDetail extends Component
         $validated = $this->validate([
             'answerDraft' => ['required', 'string', 'between:10,10000'],
         ] + $this->imageRules('answerImageDraft'), [
-            'answerDraft.required' => 'Answer text is required.',
-            'answerDraft.between'  => 'Answer must be 10–10 000 characters.',
+            'answerDraft.required' => 'Response text is required.',
+            'answerDraft.between'  => 'Response must be 10–10 000 characters.',
         ] + $this->imageMessages('answerImageDraft'));
 
         $previousPath = $answer->image_path;
@@ -413,6 +420,15 @@ class CreatorQuestionDetail extends Component
             $this->deleteImage($previousPath);
         }
 
-        $this->reset('editingAnswerId', 'answerDraft', 'answerImageDraft', 'removeAnswerImage');
+        // Read before the reset below clears it. Dispatched only here, past the
+        // ownership re-check and validation, so a rejected edit never mails.
+        if ($this->notifyAskerOfEdit) {
+            NotifyAskerOfAnswer::dispatch(
+                Question::findOrFail($this->questionId),
+                edited: true,
+            );
+        }
+
+        $this->reset('editingAnswerId', 'answerDraft', 'answerImageDraft', 'removeAnswerImage', 'notifyAskerOfEdit');
     }
 }

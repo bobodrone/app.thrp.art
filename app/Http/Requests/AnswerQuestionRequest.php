@@ -21,8 +21,8 @@ class AnswerQuestionRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'answer.required'      => 'Answer text is required.',
-            'answer.between'       => 'Answer must be 10–10 000 characters.',
+            'answer.required'      => 'Response text is required.',
+            'answer.between'       => 'Response must be 10–10 000 characters.',
         ];
     }
 }

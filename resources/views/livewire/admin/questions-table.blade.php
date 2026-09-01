@@ -23,7 +23,7 @@
             <option value="">All statuses</option>
             <option value="asked">Asked</option>
             <option value="claimed">In progress</option>
-            <option value="answered">Answered</option>
+            <option value="answered">Responded</option>
         </select>
 
         <input
@@ -69,7 +69,7 @@
                         <th class="px-4 py-3 text-left font-medium text-soil-500">Status</th>
                         <th class="px-4 py-3 text-left font-medium text-soil-500">Asked by</th>
                         <th class="px-4 py-3 text-left font-medium text-soil-500">Claimed by</th>
-                        <th class="px-4 py-3 text-left font-medium text-soil-500">Answered by</th>
+                        <th class="px-4 py-3 text-left font-medium text-soil-500">Response by</th>
                         <th class="px-4 py-3 text-left font-medium text-soil-500">Created</th>
                         <th class="px-4 py-3"></th>
                     </tr>
@@ -105,7 +105,7 @@
                                     @if ($isTrashed)
                                         <span class="rounded-full bg-poppy-100 px-2 py-0.5 font-body text-xs font-medium text-poppy-600">Deleted</span>
                                     @elseif ($q->hasHiddenAnswer())
-                                        <span class="rounded-full bg-soil-100 px-2 py-0.5 font-body text-xs text-soil-500">Answer removed</span>
+                                        <span class="rounded-full bg-soil-100 px-2 py-0.5 font-body text-xs text-soil-500">Response removed</span>
                                     @endif
                                     @if ($isHidden)
                                         <x-hidden-badge />
@@ -146,13 +146,13 @@
                                         <button type="button" wire:click="edit({{ $q->id }})"
                                             class="font-semibold text-soil-500 hover:text-soil-700 hover:underline">Edit</button>
                                         @if ($q->answers_count > 1)
-                                            {{-- Where every answer is listed, and the main one can be swapped. --}}
+                                            {{-- Where every response is listed, and the main one can be swapped. --}}
                                             <a href="{{ route('creator.questions.show', $q) }}"
-                                                class="font-semibold text-soil-500 hover:text-soil-700 hover:underline">Answers ({{ $q->answers_count }})</a>
+                                                class="font-semibold text-soil-500 hover:text-soil-700 hover:underline">Responses ({{ $q->answers_count }})</a>
                                         @endif
                                         @if ($q->hasHiddenAnswer())
                                             <button type="button" wire:click="restoreAnswer({{ $q->id }})"
-                                                class="font-semibold text-leaf-600 hover:underline">Restore answer</button>
+                                                class="font-semibold text-leaf-600 hover:underline">Restore response</button>
                                         @endif
                                         @if ($isHidden)
                                             <button type="button" wire:click="unhide({{ $q->id }})"
@@ -162,7 +162,7 @@
                                                 class="font-semibold text-soil-500 hover:text-soil-700 hover:underline">Hide</button>
                                         @endif
                                         <button type="button" wire:click="delete({{ $q->id }})"
-                                            wire:confirm="Delete this question and its answer? It can be restored from “Show deleted”."
+                                            wire:confirm="Delete this question and its response? It can be restored from “Show deleted”."
                                             class="font-semibold text-poppy-600 hover:underline">Delete</button>
                                     @endif
                                 </div>
@@ -205,7 +205,7 @@
             <div class="max-h-[85vh] overflow-y-auto p-6">
                 <h2 class="font-display text-lg font-bold text-soil-900">Hide question</h2>
                 <p class="mt-2 font-body text-sm text-soil-600">
-                    It leaves the public feed and can no longer be claimed or answered. The person
+                    It leaves the public feed and can no longer be claimed or responded to. The person
                     who asked it keeps seeing it, along with whatever you write below. Nobody is
                     emailed. To remove a question without telling anyone, delete it instead.
                 </p>
@@ -272,7 +272,7 @@
 
                     @if ($editHasAnswer)
                         <div wire:key="edit-answer-{{ $editingId }}">
-                            <label class="mb-1 block font-body text-xs font-medium uppercase tracking-wide text-soil-500">Answer</label>
+                            <label class="mb-1 block font-body text-xs font-medium uppercase tracking-wide text-soil-500">Response</label>
                             <x-markdown-editor wire-model="editAnswer" :initial="$editAnswer" />
                             @error('editAnswer') <p class="mt-1 font-body text-xs text-poppy-600">{{ $message }}</p> @enderror
                         </div>
@@ -283,9 +283,9 @@
                     @if ($editHasAnswer)
                         <button type="button"
                             wire:click="deleteAnswer({{ $editingId }})"
-                            wire:confirm="Remove this answer and reopen the question?"
+                            wire:confirm="Remove this response and reopen the question?"
                             class="font-body text-sm text-poppy-600 hover:underline">
-                            Delete answer
+                            Delete response
                         </button>
                     @else
                         <span></span>

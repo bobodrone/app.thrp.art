@@ -1,7 +1,7 @@
 <div class="mx-auto max-w-3xl px-4 py-10">
     <div class="mb-8 flex items-center justify-between">
         <h1 class="font-display text-2xl font-bold text-soil-900">Responder Dashboard</h1>
-        <a href="{{ route('creator.answered') }}" class="font-body text-sm font-semibold text-leaf-600 hover:underline">My Answered Questions →</a>
+        <a href="{{ route('creator.answered') }}" class="font-body text-sm font-semibold text-leaf-600 hover:underline">Questions I've Responded To →</a>
     </div>
 
     {{-- ── My In-Progress ────────────────────────────────────────────────── --}}

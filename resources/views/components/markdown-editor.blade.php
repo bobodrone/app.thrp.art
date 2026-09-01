@@ -15,7 +15,7 @@
             @if ($wireModel) wire:model="{{ $wireModel }}" @else name="{{ $name }}" @endif
             x-on:input="if (window.thrpMarkdown) preview = window.thrpMarkdown($event.target.value)"
             rows="14"
-            placeholder="Write your answer in Markdown…"
+            placeholder="Write your response in Markdown…"
             class="flex-1 resize-none rounded-xl border-leaf-200 font-mono text-sm shadow-sm"
         >{{ $initial }}</textarea>
     </div>

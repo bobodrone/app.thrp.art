@@ -408,6 +408,32 @@ class Question extends Model
         return $this->primaryAnswer?->isEditableBy($user) ?? false;
     }
 
+    /**
+     * Whether any visible answer here has an edit form $user can open — the
+     * main one or an alternative. What decides between an edit link and a
+     * plain view link in the answered list, where a responder's own answer is
+     * as often an alternative as it is the main one.
+     */
+    public function hasEditableAnswerFor(?User $user): bool
+    {
+        if ($user === null) {
+            return false;
+        }
+
+        if ($this->relationLoaded('answers')) {
+            return $this->answers->contains(fn (Answer $answer) => $answer->isEditFormOpenTo($user));
+        }
+
+        if (! $user->role->isAtLeast(UserRole::Creator)) {
+            return false;
+        }
+
+        // An admin may edit anyone's, so any answer at all will do.
+        return $user->role === UserRole::Admin
+            ? $this->answers()->exists()
+            : $this->answers()->writtenBy($user->id)->exists();
+    }
+
     public function asker(): BelongsTo
     {
         return $this->belongsTo(User::class, 'asked_by');

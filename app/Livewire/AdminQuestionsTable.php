@@ -122,7 +122,7 @@ class AdminQuestionsTable extends Component
         }
 
         $this->reset(['editingId', 'editContent', 'editAnswer', 'editHasAnswer', 'showEdit']);
-        session()->flash('admin-questions-ok', 'Answer removed — question reopened.');
+        session()->flash('admin-questions-ok', 'Response removed — question reopened.');
     }
 
     public function delete(int $id): void
@@ -194,7 +194,7 @@ class AdminQuestionsTable extends Component
             $question->restoreAnswer($answer);
         }
 
-        session()->flash('admin-questions-ok', 'Answer restored.');
+        session()->flash('admin-questions-ok', 'Response restored.');
     }
 
     public function render()

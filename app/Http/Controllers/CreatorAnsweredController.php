@@ -21,7 +21,10 @@ class CreatorAnsweredController extends Controller
         // answer's date rather than whatever landed on the question last.
         // A hidden question drops off this list for everyone, admins included —
         // the admin table is where hidden questions are worked on.
-        $answered = Question::with(['asker:id,name', 'primaryAnswer.author:id,name,role'])
+        // `answers` comes along so the view can ask each question whether this
+        // viewer has an answer here they may edit — theirs is as often an
+        // alternative as it is the main one.
+        $answered = Question::with(['asker:id,name', 'primaryAnswer.author:id,name,role', 'answers'])
             ->visible()
             ->when($isAdmin, fn ($q) => $q->answered(), fn ($q) => $q->answeredBy($user->id))
             ->withMax(

@@ -6,7 +6,7 @@
     <p class="font-body text-sm font-semibold text-soil-700">This question is hidden</p>
     <p class="mt-1 font-body text-sm text-soil-600">
         A moderator has taken it out of public view. You can still see it here, but it no longer
-        appears in the question feed and cannot be answered.
+        appears in the question feed and cannot be responded to.
     </p>
 
     @if ($question->hidden_reason)

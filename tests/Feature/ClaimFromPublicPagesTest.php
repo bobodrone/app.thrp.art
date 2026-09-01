@@ -62,7 +62,7 @@ class ClaimFromPublicPagesTest extends TestCase
 
         $this->actingAs($creator)->get(route('questions.show', $q))
             ->assertStatus(200)
-            ->assertSee('Answer →', false)
+            ->assertSee('Respond →', false)
             ->assertSee(route('creator.questions.show', $q));
 
         $this->actingAs($creator)->get('/')
@@ -78,7 +78,7 @@ class ClaimFromPublicPagesTest extends TestCase
 
         $response = $this->actingAs($other)->get(route('questions.show', $q));
         $response->assertStatus(200);
-        $response->assertSee('Being answered by');
+        $response->assertSee('Being responded to by');
         $response->assertDontSee(route('creator.questions.show', $q));
         $response->assertDontSee(route('creator.questions.claim', $q));
 

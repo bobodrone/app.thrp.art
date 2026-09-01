@@ -125,7 +125,7 @@
 
         {{-- ── Anonymity ────────────────────────────────────────────── --}}
         <div class="rounded-2xl border border-leaf-200 bg-white p-6 shadow-sm">
-            <h2 class="mb-1 font-display text-lg font-bold text-soil-900">Answering anonymously</h2>
+            <h2 class="mb-1 font-display text-lg font-bold text-soil-900">Responding anonymously</h2>
 
             <label class="mt-3 flex items-start gap-3">
                 <input
@@ -134,11 +134,11 @@
                     class="mt-0.5 rounded border-soil-300 text-leaf-600 shadow-sm focus:ring-leaf-500"
                 />
                 <span class="font-body text-sm text-soil-700">
-                    Post my answers anonymously
+                    Post my responses anonymously
                     <span class="mt-1 block text-xs text-soil-500">
-                        New answers are credited to “{{ \App\Models\Answer::ANONYMOUS_AUTHOR }}” instead of your
-                        nickname. Answers you have already posted keep the credit they were published with, and
-                        admins can always see who answered what.
+                        New responses are credited to “{{ \App\Models\Answer::ANONYMOUS_AUTHOR }}” instead of your
+                        nickname. Responses you have already posted keep the credit they were published with, and
+                        admins can always see who responded to what.
                     </span>
                 </span>
             </label>

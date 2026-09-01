@@ -280,7 +280,7 @@ The answer involves **tea** and *patience*. Here is why.')
         $response = $this->actingAs($creator)->get('/responder/answered');
 
         $response->assertStatus(200);
-        $response->assertSee('Edit answer');
+        $response->assertSee('Edit response');
         $response->assertSee(route('creator.questions.show', $q));
     }
 
@@ -299,7 +299,7 @@ The answer involves **tea** and *patience*. Here is why.')
         $response->assertStatus(200);
         $response->assertSee('Answered by somebody else');
         $response->assertSee('Clea Creator');
-        $response->assertSee('Edit answer');
+        $response->assertSee('Edit response');
         $response->assertSee(route('creator.questions.show', $q));
     }
 }

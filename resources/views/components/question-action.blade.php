@@ -14,12 +14,12 @@
 @if ($question->isClaimableBy($user))
     <form method="post" action="{{ route('creator.questions.claim', $question) }}" @click.stop class="shrink-0">
         @csrf
-        <button type="submit" class="{{ $classes }}">Claim &amp; answer →</button>
+        <button type="submit" class="{{ $classes }}">Claim &amp; respond →</button>
     </form>
 @elseif ($question->isAwaitingAnswerFrom($user))
-    {{-- Already theirs — straight back to the answer form. --}}
-    <a href="{{ route('creator.questions.show', $question) }}" @click.stop class="{{ $classes }}">Answer →</a>
+    {{-- Already theirs — straight back to the response form. --}}
+    <a href="{{ route('creator.questions.show', $question) }}" @click.stop class="{{ $classes }}">Respond →</a>
 @elseif ($question->isAnswerableBy($user))
     {{-- Answered by someone else, and this responder has not weighed in yet. --}}
-    <a href="{{ route('creator.questions.show', $question) }}" @click.stop class="{{ $classes }}">Add your answer →</a>
+    <a href="{{ route('creator.questions.show', $question) }}" @click.stop class="{{ $classes }}">Add your response →</a>
 @endif

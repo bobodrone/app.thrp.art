@@ -20,7 +20,7 @@ class NewQuestionNotification extends Mailable
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: 'New question waiting for an answer — THRP');
+        return new Envelope(subject: 'New question waiting for a response — THRP');
     }
 
     public function content(): Content

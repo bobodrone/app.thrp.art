@@ -12,6 +12,12 @@
     if ($user) {
         if (in_array($user->role->value, [UserRole::Creator->value, UserRole::Admin->value])) {
             $navLinks[] = ['label' => 'Responder Dashboard', 'url' => route('creator.dashboard')];
+            // The way back to a published response to edit it. Admins get the
+            // whole history here, not just their own.
+            $navLinks[] = [
+                'label' => $user->role === UserRole::Admin ? 'Responses' : 'My Responses',
+                'url'   => route('creator.answered'),
+            ];
         }
         $navLinks[] = ['label' => 'My Questions', 'url' => route('my-questions')];
         if ($user->role === UserRole::Member) {

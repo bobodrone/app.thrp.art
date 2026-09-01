@@ -11,7 +11,7 @@
                 <div class="rounded-2xl border border-leaf-200 bg-white p-6 shadow-sm">
                     <h2 class="mb-1 font-display text-lg font-bold text-soil-900">Responder Profile</h2>
                     <p class="mb-4 font-body text-sm text-soil-600">
-                        Your picture, bio and links — plus whether your answers are posted anonymously.
+                        Your picture, bio and links — plus whether your responses are posted anonymously.
                     </p>
                     <a href="{{ route('creator.profile') }}"
                         class="inline-block rounded-xl bg-leaf-600 px-4 py-2 font-body text-sm font-semibold text-white hover:bg-leaf-500 transition-colors">
@@ -23,7 +23,7 @@
             {{-- ── Change Nickname ─────────────────────────────────────── --}}
             <div class="rounded-2xl border border-leaf-200 bg-white p-6 shadow-sm">
                 <h2 class="mb-1 font-display text-lg font-bold text-soil-900">Nickname</h2>
-                <p class="mb-4 font-body text-sm text-soil-600">This is how your name appears on questions and answers.</p>
+                <p class="mb-4 font-body text-sm text-soil-600">This is how your name appears on questions and responses.</p>
 
                 @if (session('status') === 'name-updated')
                     <p class="mb-4 rounded-xl border border-leaf-200 bg-leaf-100 px-4 py-3 font-body text-sm text-leaf-700">

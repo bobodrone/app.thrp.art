@@ -150,11 +150,11 @@ class PromoteAnswerTest extends TestCase
 
         Livewire::actingAs($admin)
             ->test(CreatorQuestionDetail::class, ['question' => $q])
-            ->assertSee('Make main answer');
+            ->assertSee('Make main response');
 
         Livewire::actingAs($other)
             ->test(CreatorQuestionDetail::class, ['question' => $q])
-            ->assertDontSee('Make main answer');
+            ->assertDontSee('Make main response');
     }
 
     public function test_the_admin_table_links_to_questions_with_several_answers(): void
@@ -172,7 +172,7 @@ class PromoteAnswerTest extends TestCase
 
         Livewire::actingAs($admin)
             ->test(AdminQuestionsTable::class)
-            ->assertSee('Answers (2)')
+            ->assertSee('Responses (2)')
             ->assertSee(route('creator.questions.show', $several), escape: false)
             ->assertDontSee(route('creator.questions.show', $single), escape: false);
     }

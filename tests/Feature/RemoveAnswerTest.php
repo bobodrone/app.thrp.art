@@ -116,13 +116,13 @@ class RemoveAnswerTest extends TestCase
 
         Livewire::actingAs($admin)
             ->test(CreatorQuestionDetail::class, ['question' => $q->fresh()])
-            ->assertSee('1 removed answer')
+            ->assertSee('1 removed response')
             ->assertSee('The removed alternative body.');
 
         // Not even its own author sees it once it is down.
         Livewire::actingAs($other)
             ->test(CreatorQuestionDetail::class, ['question' => $q->fresh()])
-            ->assertDontSee('removed answer')
+            ->assertDontSee('removed response')
             ->assertDontSee('The removed alternative body.');
     }
 

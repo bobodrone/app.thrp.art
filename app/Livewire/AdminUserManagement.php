@@ -219,7 +219,7 @@ class AdminUserManagement extends Component
 
         $user->anonymise();
 
-        session()->flash('admin-users-ok', 'Account anonymised — their questions and answers are still there.');
+        session()->flash('admin-users-ok', 'Account anonymised — their questions and responses are still there.');
     }
 
     // ── Guards ────────────────────────────────────────────────────────────

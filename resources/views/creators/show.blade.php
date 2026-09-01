@@ -13,7 +13,7 @@
                 <div class="min-w-0">
                     <h1 class="font-display text-3xl font-black text-soil-900">{{ $creator->name }}</h1>
                     <p class="mt-1 font-body text-sm text-soil-500">
-                        {{ $creator->answers_count }} {{ \Illuminate\Support\Str::plural('answer', $creator->answers_count) }} published
+                        {{ $creator->answers_count }} {{ \Illuminate\Support\Str::plural('response', $creator->answers_count) }} published
                     </p>
                 </div>
             </div>

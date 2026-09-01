@@ -43,7 +43,7 @@
         <div class="mt-4 border-t-2 border-sun-300 pt-4">
             <div class="mb-2 flex items-center gap-2">
                 <x-flower size="16" petalColor="#FFD600" centerColor="#1A5C38" dotColor="#FFD600" />
-                <p class="font-body text-xs font-semibold uppercase tracking-wider text-leaf-600">Answer</p>
+                <p class="font-body text-xs font-semibold uppercase tracking-wider text-leaf-600">Response</p>
             </div>
             @if ($imageUrl = $question->answerImageUrl())
                 <x-answer-image :url="$imageUrl" />
@@ -53,7 +53,7 @@
             </div>
             @if ($question->answererNameFor(auth()->user()))
                 <p class="mt-3 font-body text-xs text-soil-400">
-                    Answered by <x-answerer-name :answer="$question->primaryAnswer" :viewer="auth()->user()" class="font-medium text-soil-600" />
+                    Response by <x-answerer-name :answer="$question->primaryAnswer" :viewer="auth()->user()" class="font-medium text-soil-600" />
                     @if ($question->primaryAnswer->published_at)&nbsp;· {{ $question->primaryAnswer->published_at->diffForHumans() }}@endif
                 </p>
             @endif
@@ -62,13 +62,13 @@
                 <a href="{{ route('questions.show', $question->id) }}"
                    @click.stop
                    class="mt-3 inline-block font-body text-xs font-semibold text-leaf-600 hover:underline">
-                    +{{ $otherCount }} {{ \Illuminate\Support\Str::plural('other answer', $otherCount) }} from the community →
+                    +{{ $otherCount }} {{ \Illuminate\Support\Str::plural('other response', $otherCount) }} from the community →
                 </a>
             @endif
         </div>
     </template>
 
-    {{-- "Has an answer" hint when collapsed --}}
+    {{-- "Has a response" hint when collapsed --}}
     @if ($question->status->value === 'answered' && ! empty($renderedAnswer))
         <p x-show="!expanded" x-cloak
            class="mt-2 flex items-center gap-1.5 font-body text-xs font-medium text-leaf-600">

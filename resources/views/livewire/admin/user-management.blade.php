@@ -182,7 +182,7 @@
                                     @unless ($u->isAnonymised())
                                         <button type="button"
                                             wire:click="anonymise({{ $u->id }})"
-                                            wire:confirm="Scrub this person's name, email and profile? Their questions and any answers written on them stay up. This cannot be undone."
+                                            wire:confirm="Scrub this person's name, email and profile? Their questions and any responses written on them stay up. This cannot be undone."
                                             class="rounded-lg border border-soil-200 px-3 py-1.5 text-xs text-soil-500 hover:bg-soil-50">
                                             Anonymise
                                         </button>

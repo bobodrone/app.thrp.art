@@ -36,7 +36,7 @@ class AlternativeAnswersUiTest extends TestCase
         $response->assertOk()
             ->assertSee('The main answer body here.')
             ->assertSee('The alternative answer body here.')
-            ->assertSee('1 other answer from the community')
+            ->assertSee('1 other response from the community')
             ->assertSee('Other Creator');
 
         // The main answer still comes first on the page.
@@ -64,7 +64,7 @@ class AlternativeAnswersUiTest extends TestCase
 
         $this->get(route('questions.show', $q))
             ->assertOk()
-            ->assertSee('2 other answers from the community');
+            ->assertSee('2 other responses from the community');
     }
 
     public function test_a_removed_alternative_is_not_shown(): void
@@ -90,8 +90,8 @@ class AlternativeAnswersUiTest extends TestCase
 
         $this->get('/')
             ->assertOk()
-            ->assertSee('2 answers — click to read')
-            ->assertSee('+1 other answer from the community →');
+            ->assertSee('2 responses — click to read')
+            ->assertSee('+1 other response from the community →');
     }
 
     public function test_a_single_answer_card_keeps_the_original_hint(): void
@@ -100,7 +100,7 @@ class AlternativeAnswersUiTest extends TestCase
 
         $this->get('/')
             ->assertOk()
-            ->assertSee('Has an answer — click to read')
+            ->assertSee('Has a response — click to read')
             ->assertDontSee('from the community');
     }
 
@@ -113,7 +113,7 @@ class AlternativeAnswersUiTest extends TestCase
         $this->actingAs($other)->get(route('questions.show', $q))
             ->assertOk()
             ->assertSee('Have a different take on this one?')
-            ->assertSee('Add your answer →');
+            ->assertSee('Add your response →');
     }
 
     public function test_the_main_answerer_and_members_are_not_offered_a_way_in(): void
@@ -123,11 +123,11 @@ class AlternativeAnswersUiTest extends TestCase
 
         $this->actingAs($main)->get(route('questions.show', $q))
             ->assertOk()
-            ->assertDontSee('Add your answer →');
+            ->assertDontSee('Add your response →');
 
         $this->actingAs(User::factory()->create())->get(route('questions.show', $q))
             ->assertOk()
-            ->assertDontSee('Add your answer →');
+            ->assertDontSee('Add your response →');
     }
 
     public function test_a_creator_can_post_an_alternative_from_the_creator_view(): void

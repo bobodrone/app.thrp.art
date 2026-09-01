@@ -13,7 +13,7 @@ enum QuestionStatus: string
         return match ($this) {
             self::Asked    => 'Asked',
             self::Claimed  => 'In progress',
-            self::Answered => 'Answered',
+            self::Answered => 'Responded',
         };
     }
 }

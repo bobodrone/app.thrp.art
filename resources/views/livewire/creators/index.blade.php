@@ -7,7 +7,7 @@
 
 <div class="mx-auto max-w-3xl px-4 py-10">
     <h1 class="mb-1 font-display text-3xl font-black text-soil-900">Responders</h1>
-    <p class="mb-6 font-body text-sm text-soil-600">The people who answer your questions.</p>
+    <p class="mb-6 font-body text-sm text-soil-600">The people who respond to your questions.</p>
 
     {{-- ── Type-ahead search ────────────────────────────────────────── --}}
     <div class="relative mb-6">
@@ -30,7 +30,7 @@
 
     <div class="overflow-hidden rounded-2xl border border-leaf-200 bg-white shadow-sm">
         <table class="w-full text-left table-fixed">
-            <caption class="sr-only">Responders, with the number of answers each has published</caption>
+            <caption class="sr-only">Responders, with the number of responses each has published</caption>
             <thead class="border-b border-leaf-200 bg-soil-50">
                 <tr class="font-body text-xs font-semibold uppercase tracking-wide text-soil-600">
                     <th scope="col" class="px-5 py-3 w-auto" aria-sort="{{ $sort === 'name' ? ($direction === 'asc' ? 'ascending' : 'descending') : 'none' }}">
@@ -40,7 +40,7 @@
                     </th>
                     <th scope="col" class="px-5 py-3 w-20 text-right" aria-sort="{{ $sort === 'answers' ? ($direction === 'asc' ? 'ascending' : 'descending') : 'none' }}">
                         <button type="button" wire:click="sortBy('answers')" class="hover:text-leaf-600">
-                            Answers{{ $arrow('answers') }}
+                            Responses{{ $arrow('answers') }}
                         </button>
                     </th>
                     <th scope="col" class="px-5 py-3 w-32"><span class="sr-only">Profile</span></th>

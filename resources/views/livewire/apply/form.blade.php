@@ -11,7 +11,7 @@
             <p class="font-body mb-3 text-xs font-semibold uppercase tracking-[0.3em] text-leaf-700">Responder Application</p>
             <h1 class="font-display text-5xl font-black leading-tight text-soil-900">Become a<br>Responder.</h1>
             <p class="font-body mt-4 max-w-md text-soil-700">
-                Responders answer questions submitted by the community. Tell us about yourself.
+                Responders respond to questions submitted by the community. Tell us about yourself.
             </p>
         </div>
     </div>
